@@ -251,6 +251,14 @@ class LevelSystem(commands.Cog):
     @commands.command()
     @commands.check(is_me)
     async def setmultiplier(self, ctx: commands.Context, target: discord.Member, multiplier: int):
+        """
+        Command to set the multiplier of a member, setting it to 0 will make it so they don't get any level, eliminating
+        the need of having an "ispaused" field in the database which will be removed soon.\n
+        :param ctx:
+        :param target:
+        :param multiplier:
+        :return:
+        """
         if target.id not in self._cache[ctx.guild.id]:
             await self.add_to_cache(ctx.guild.id, target.id)
             self._cache[ctx.guild.id][target.id]['boost'] = int(multiplier)
@@ -259,6 +267,12 @@ class LevelSystem(commands.Cog):
     @commands.command()
     @commands.check(is_me)
     async def update_db(self, ctx):
+        """
+        Command to update the database manually, mostly used for testing purposes, or when planning to take bot down
+        for maintenance 
+        :param ctx:
+        :return:
+        """
         await self.update_level_db()
         await ctx.send("db updated (hopefully)")
 
