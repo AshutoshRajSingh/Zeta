@@ -8,6 +8,7 @@ from discord.ext import commands
 intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix=".", intents=intents)
+bot.remove_command('help')
 
 
 async def connect_to_db():
@@ -23,4 +24,5 @@ async def on_ready():
     print("successfully started process")
 
 bot.load_extension('exts.level_system')
+bot.load_extension('exts.helpcmd')
 bot.run(os.environ['BOT_TOKEN'])
