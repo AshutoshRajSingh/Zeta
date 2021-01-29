@@ -16,7 +16,14 @@ async def connect_to_db():
     await bot.wait_until_ready()
     bot.conn = await asyncpg.connect(DATABASE_URL, ssl='require')
 
+
+async def change_presence():
+    await bot.wait_until_ready()
+    await bot.change_presence(activity=discord.Game("Type .help for usage!"))
+
+
 asyncio.get_event_loop().create_task(connect_to_db())
+asyncio.get_event_loop().create_task(change_presence())
 
 
 @bot.event
