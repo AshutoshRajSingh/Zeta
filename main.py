@@ -32,4 +32,5 @@ async def on_ready():
 
 bot.load_extension('exts.level_system')
 bot.load_extension('exts.helpcmd')
+bot.load_extension('exts.funcmds')
 bot.run(os.environ['BOT_TOKEN'])
