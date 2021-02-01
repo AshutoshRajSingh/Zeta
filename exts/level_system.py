@@ -44,7 +44,7 @@ class LevelSystem(commands.Cog):
             amount = 5*self._cache[guild_id][member_id]['boost']
         self._cache[guild_id][member_id]['exp'] += amount
 
-    async def add_to_cache(self, guild_id: int, member_id: int):
+    async def add_to_cache(self, guild_id: int, member_id: int) -> dict:
         """
         Function that adds a member to the cache
 
@@ -67,7 +67,7 @@ class LevelSystem(commands.Cog):
 
         :param guild_id: the id of the guild
         :param member_id: the id of the member belonging to that guild
-        :return: None
+        :return: data(dict) - The member that was just put inside db, same format as cache.
         """
         if guild_id in self._cache and member_id in self._cache[guild_id]:
             return
@@ -211,7 +211,8 @@ class LevelSystem(commands.Cog):
             if NewLevel > OldLevel:
                 self._cache[message.guild.id][message.author.id]['level'] = NewLevel
                 embed = discord.Embed(title=f"{message.author}",
-                                      description=f"GZ on level {NewLevel}, {message.author.mention}")
+                                      description=f"GZ on level {NewLevel}, {message.author.mention}",
+                                      color=discord.Colour.green())
                 await message.channel.send(embed=embed)
 
     @commands.command()
