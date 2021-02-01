@@ -6,7 +6,28 @@ from discord.ext import commands
 
 intents = discord.Intents.all()
 
-bot = commands.Bot(command_prefix=".", intents=intents)
+
+"""-------------------Doing all the command prefix stuff here---------------------------"""
+
+
+async def load_prefixes(bott: commands.Bot):
+    await bott.wait_until_ready()
+    async with bott.pool.acquire() as conn:
+        async with conn.transaction():
+            async for entry in conn.cursor("SELECT id, prefix FROM guilds"):
+                bott.prefixes[entry.get('id')] = entry['prefix']
+
+
+async def get_pre(bott: commands.Bot, message: discord.Message):
+    prefix = bott.prefixes.get(message.guild.id)
+    if prefix:
+        return prefix
+    else:
+        return "."
+
+
+bot = commands.Bot(command_prefix=get_pre, intents=intents)
+bot.prefixes = {}
 bot.remove_command('help')
 
 """---------------Database Utility Functions-----------------------"""
@@ -42,6 +63,9 @@ async def create_member_table(**kwargs):
                           f"birthday date)")
 
 
+"""-----------------------Important things that need to happen as bot starts-------------------"""
+
+
 async def connect_to_db():
     bot.pool = await asyncpg.create_pool(os.environ['DATABASE_URL'], ssl='require')
 
@@ -64,6 +88,10 @@ async def change_presence():
 asyncio.get_event_loop().create_task(connect_to_db())
 asyncio.get_event_loop().create_task(check_tables())
 asyncio.get_event_loop().create_task(change_presence())
+asyncio.get_event_loop().create_task(load_prefixes(bot))
+
+
+"""------------Events that I didn't bother making a separate cog for, if they become too much might do the same------"""
 
 
 @bot.event
@@ -76,9 +104,13 @@ async def on_guild_join(guild):
     await create_member_table(guild=guild)
 
 
+"""-----------Load all the extensions one at a time like an absolute peasant heheheheheueueue-----------"""
+
+
 bot.load_extension('exts.level_system')
 bot.load_extension('exts.helpcmd')
 bot.load_extension('exts.funcmds')
+bot.load_extension('exts.GuildConfig')
 
 # bot come alive
 bot.run(os.environ['BOT_TOKEN'])
