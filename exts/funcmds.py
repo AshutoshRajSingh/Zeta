@@ -22,6 +22,9 @@ class funcmds(commands.Cog):
         async with self.bot.pool.acquire() as conn:
             async with conn.transaction():
                 # Table name :kekw:
+                if type(ctx.guild.id) is not int:
+                    raise ValueError("Guild id is somehow not int")
+
                 table_name = "server_members" + str(ctx.guild.id)
 
                 query = f"SELECT id, birthday FROM {table_name}" + " WHERE id = $1"
@@ -31,7 +34,7 @@ class funcmds(commands.Cog):
 
             # If birthday existed in db
             if data.get('birthday'):
-                birthday = data.get('birthday').strftime("%d %m %y")
+                birthday = data.get('birthday').strftime("%d %B")
             else:
                 # Send error message if birthday wasn't found
                 await ctx.send(f"Couldn't find {target}'s birthday in this server, tell them to set it using "
@@ -40,7 +43,7 @@ class funcmds(commands.Cog):
                 return
 
         # Send the birthday as a message
-        await ctx.send(f"{target}'s birthday was recorded to be on {birthday}")
+        await ctx.send(f"{target}'s birthday is on {birthday}")
 
     @commands.command()
     async def setbd(self, ctx: commands.Context, *, birthday: str):
@@ -65,11 +68,11 @@ class funcmds(commands.Cog):
         # Yeet it into dabatase
         table_name = f"server_members{ctx.guild.id}"
         query = f"UPDATE {table_name}" + " SET birthday=to_date($1, 'DD MM YYYY') WHERE id =  $2"
-        await self.bot.conn.execute(query, birthday, ctx.author.id)
+        await self.bot.pool.execute(query, birthday, ctx.author.id)
 
         # Send confirmation message stating that the birthday was recorded successfully
         embed = discord.Embed(title="Birthday recorded!",
-                              description=f"Your day is on {birthday}",
+                              description=f"Your day is on {datecheck.strftime('%d %B %Y')}",
                               colour=discord.Colour.green())
         await ctx.send(embed=embed)
 
