@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from math import floor, sqrt
+import asyncio
 
 
 def is_me(ctx):
@@ -68,28 +69,22 @@ class LevelSystem(commands.Cog):
         :param member_id: the id of the member belonging to that guild
         :return: None
         """
+        if guild_id in self._cache and member_id in self._cache[guild_id]:
+            return
 
-        # Create the table if by any chance it does not exist
-        await self.bot.conn.execute(f"CREATE TABLE IF NOT EXISTS server_members{guild_id} ("
-                                    f"id bigint, "
-                                    f"username varchar(255), "
-                                    f"level int, "
-                                    f"exp int, "
-                                    f"ispaused boolean, "
-                                    f"boost int, "
-                                    f"birthday date)")
+        async with self.bot.pool.acquire() as conn:
+            async with conn.transaction():
 
-        async with self.bot.conn.transaction():
+                # Set the table name
+                table_name = "server_members" + str(guild_id)
 
-            # Set the table name
-            table_name = "server_members" + str(guild_id)
+                # The query to execute, $1 notation used for sanitization
 
-            # The query to execute, $1 notation used for sanitization
-            query = f"SELECT * FROM {table_name} WHERE id = $1"
-            cur = await self.bot.conn.cursor(query, member_id)
+                query = f"SELECT * FROM {table_name} WHERE id = $1"
+                cur = await conn.cursor(query, member_id)
 
-            # The data returned by querying the database, defaults to None if record was not present
-            data = await cur.fetchrow()
+                # The data returned by querying the database, defaults to None if record was not present
+                data = await cur.fetchrow()
 
             # Can only do this stuff if there actually is relevant data in the database, otherwise,
             # a separate function adds the default values into the database, this bit adds the data to the cache.
@@ -105,6 +100,7 @@ class LevelSystem(commands.Cog):
             else:
                 await self.add_to_db(guild_id, member_id)
                 await self.add_to_cache(guild_id, member_id)  # important
+            return data
 
     async def add_to_db(self, guild_id: int,  member_id: int) -> None:
         """
@@ -116,11 +112,11 @@ class LevelSystem(commands.Cog):
         :param member_id: The id of the member
         :return: None
         """
-        async with self.bot.conn.transaction():
+        async with self.bot.pool.acquire() as conn:
             table_name = "server_members" + str(guild_id)
             query = f"INSERT INTO {table_name} (id, username, level, exp, ispaused, boost) " \
                     f"VALUES ($1, $2, $3, $4, $5, $6)"
-            await self.bot.conn.execute(query, member_id, 'deprecated', 0, 0, False, 1)
+            await conn.execute(query, member_id, 'deprecated', 0, 0, False, 1)
 
     async def dump_single_guild(self, guildid: int):
         """
@@ -140,7 +136,7 @@ class LevelSystem(commands.Cog):
                     f"boost = $4" \
                     f"WHERE id = $5"
 
-            await self.bot.conn.execute(query,
+            await self.bot.pool.execute(query,
                                         current['level'],
                                         current['exp'],
                                         current['ispaused'],
@@ -162,14 +158,14 @@ class LevelSystem(commands.Cog):
 
         table_name = 'server_members' + str(guild.id)
 
-        async with self.bot.conn.transaction():
-            top10 = ""
-            rank = 1
-            cur = self.bot.conn.cursor(f"SELECT id, exp FROM {table_name} ORDER BY exp DESC LIMIT $1", limit)
-            async for entry in cur:
-                top10 += f"{rank}. {guild.get_member(entry.get('id'))}, exp: {entry.get('exp')}\n"
-                rank += 1
-            return top10
+        async with self.bot.pool.acquire() as conn:
+            async with conn.transaction():
+                top10 = ""
+                rank = 1
+                async for entry in conn.cursor(f"SELECT id, exp FROM {table_name} ORDER BY exp DESC LIMIT $1", limit):
+                    top10 += f"{rank}. {guild.get_member(entry.get('id'))}, exp: {entry.get('exp')}\n"
+                    rank += 1
+                return top10
 
     @tasks.loop(minutes=10)
     async def update_level_db(self):
@@ -219,7 +215,7 @@ class LevelSystem(commands.Cog):
                 await message.channel.send(embed=embed)
 
     @commands.command()
-    async def level(self, ctx, target: discord.Member = None):
+    async def level(self, ctx: commands.Context, target: discord.Member = None):
         """
         Displays the level and exp points of a target specified
         If no target specified, shows own level
@@ -228,14 +224,14 @@ class LevelSystem(commands.Cog):
             target = ctx.author
         if ctx.guild.id in self._cache and target.id in self._cache[ctx.guild.id]:
             data = self._cache[ctx.guild.id][target.id]
-            embed = discord.Embed(title=f"{target}",
-                                  description=f"You are currently on level : {data['level']}\n"
-                                              f"With exp : {data['exp']}",
-                                  colour=discord.Colour.blue())
-            await ctx.send(embed=embed)
         else:
-            await self.add_to_cache(ctx.guild.id, target.id)
-            await self.level(ctx, target)
+            data = await self.add_to_cache(ctx.guild.id, ctx.author.id)
+
+        embed = discord.Embed(title=f"{target}",
+                              description=f"You are currently on level : {data['level']}\n"
+                                          f"With exp : {data['exp']}",
+                              colour=discord.Colour.blue())
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def lb(self, ctx):
