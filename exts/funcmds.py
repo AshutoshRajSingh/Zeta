@@ -89,11 +89,22 @@ class funcmds(commands.Cog):
             query = f"SELECT id, birthday FROM {table_name} " + "WHERE DATE_PART('day', birthday) = date_part('day', CURRENT_DATE) AND DATE_PART('month', birthday) = date_part('month', CURRENT_DATE)"
             async with self.bot.pool.acquire() as conn:
                 async with conn.transaction():
-                    async for record in conn.cursor(query):
-                        embed = discord.Embed(title=f"{self.bot.get_user(record.get('id'))} has their birthday today",
-                                              description="Reblog if u eating beans",
-                                              colour=discord.Colour.blue())
-                        await (self.bot.get_channel(768403507878821888)).send(embed=embed)
+
+                    # Temporary cursor to fetch the id of the channel to set alerts in
+                    tempcur = await conn.cursor("SELECT id, bdayalert FROM guilds WHERE id = $1", guild.id)
+                    tempdata = await tempcur.fetchrow()
+                    try:
+                        alert_channel_id = tempdata.get('bdayalert')
+                    except AttributeError:
+                        pass
+
+                    if alert_channel_id:
+                        async for record in conn.cursor(query):
+                            embed = discord.Embed(
+                                title=f"{self.bot.get_user(record.get('id'))} has their birthday today",
+                                description="Reblog if u eating beans",
+                                colour=discord.Colour.blue())
+                            await (guild.get_channel(alert_channel_id)).send(embed=embed)
 
     @bday_poll.before_loop
     async def kellog(self):

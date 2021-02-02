@@ -29,6 +29,18 @@ class ConfigCommands(commands.Cog):
                                   colour=discord.Colour.green())
                 await ctx.send(embed=e)
 
+    @commands.command()
+    @commands.has_guild_permissions(administrator=True)
+    async def bdchannel(self, ctx:commands.Context, channel: discord.TextChannel):
+        """Sets the birthday alert channel for a particular guild"""
+
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("UPDATE guilds SET bdayalert = $1 WHERE id = $2", channel.id, ctx.guild.id)
+            e = discord.Embed(title='Success!',
+                              description=f'The channel {channel.mention} will be used for auto birthday alerts',
+                              colour=discord.Colour.green())
+            await ctx.send(embed=e)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(ConfigCommands(bot))
