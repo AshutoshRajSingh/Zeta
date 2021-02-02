@@ -62,6 +62,9 @@ async def create_member_table(**kwargs):
                           f"boost int, "
                           f"birthday date)")
 
+        await con.execute("INSERT INTO guilds (id) "
+                          "VALUES ($1) ON CONFLICT (id) DO NOTHING", guild_id)
+
 
 """-----------------------Important things that need to happen as bot starts-------------------"""
 
