@@ -8,7 +8,7 @@ class ConfigCommands(commands.Cog):
 
     @commands.command()
     @commands.has_guild_permissions(administrator=True)
-    async def prefix(self, ctx: commands.Context, prefix: str):
+    async def prefix(self, ctx: commands.Context, prefix: str) -> None:
         if len(prefix) > 10:
             await ctx.send("Prefix must be less than 10 characters long")
             return
