@@ -31,7 +31,7 @@ class ConfigCommands(commands.Cog):
 
     @commands.command()
     @commands.has_guild_permissions(administrator=True)
-    async def bdchannel(self, ctx:commands.Context, channel: discord.TextChannel):
+    async def bdchannel(self, ctx: commands.Context, channel: discord.TextChannel):
         """Sets the birthday alert channel for a particular guild"""
 
         async with self.bot.pool.acquire() as conn:
