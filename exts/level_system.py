@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 from math import floor, sqrt
+from typing import Union
 import asyncio
 
 
@@ -26,9 +27,14 @@ class LevelSystem(commands.Cog):
 
         # Look up implementation inside the add_to_cache function docstring
         self._cache = {}
+        asyncio.get_event_loop().create_task(self.load_cache())
 
         # Start the loop that dumps cache to database every 10 minutes
         self.update_level_db.start()
+
+    async def load_cache(self):
+        for guild in self.bot.guilds:
+            self._cache[guild.id] = {}
 
     async def give_exp(self, guild_id: int,  member_id: int, amount=None) -> None:
         """
@@ -44,7 +50,7 @@ class LevelSystem(commands.Cog):
             amount = 5*self._cache[guild_id][member_id]['boost']
         self._cache[guild_id][member_id]['exp'] += amount
 
-    async def add_to_cache(self, guild_id: int, member_id: int) -> dict:
+    async def add_to_cache(self, guild_id: int, member_id: int) -> Union[dict, None]:
         """
         Function that adds a member to the cache
 
@@ -176,7 +182,7 @@ class LevelSystem(commands.Cog):
         """
         for guildId in self._cache:
             await self.dump_single_guild(guildId)
-        self._cache = {}
+            self._cache[guildId] = {}
         print("Database updated")
 
     @update_level_db.before_loop
