@@ -78,6 +78,9 @@ class LevelSystem(commands.Cog):
         if guild_id in self._cache and member_id in self._cache[guild_id]:
             return
 
+        if type(guild_id) is not int:
+            raise TypeError("guild id must be int")
+
         async with self.bot.pool.acquire() as conn:
             async with conn.transaction():
 
