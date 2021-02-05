@@ -12,6 +12,19 @@ everything = {
         "lb",
         ""
     ],
+    'giveexp': [
+        '(Mod) Used to award a certain amount of exp to a member',
+        "giveexp target amount",
+        '`target` here is the member who you wish to give exp points to\n'
+        '`amount` is the number of exp points you wish to award that person'
+    ],
+    'setmultiplier': [
+        "(Mod) Used to set exp multiplier of a member",
+        "setmultiplier target multiplier",
+        "`target` here is the member whose multiplier you wish to set, can be mention, id or username\n"
+        "`multiplier` here is the exp multiplier you want to set, a value of 2 will indicate twice as fast levelling"
+    ],
+
 
     'setbd': [
         "Used to save your own birthday in bot so others can see it",
@@ -34,19 +47,33 @@ everything = {
         "bdaychannel target_channel",
         "target_channel here is the server channel you wish to set for sending out birthday alerts, if not configured,"
         "birthday alerts are not sent out."
+    ],
+    'lockdown': [
+        "(Mod) Initiate a server wide message lockdown",
+        "lockdown",
+        f"Prevents the `@everyone` role from sending messages/adding reactions in the guild, useful in the event of"
+        f"a raid"
+    ],
+    'unlock': [
+        "(Mod) Lifts the lockdown (if any)",
+        "unlock",
+        "Makes it so that the `everyone` role has the permission to send messages and add reactions in the guild."
     ]
 
 }
 
 categoryinfo = {
     "Level System": [
-        'level', 'lb'
+        'level', 'lb', 'giveexp', 'setmultiplier'
     ],
-    "Misc": [
-        'setbd', 'bday'
+    "Birthday system": [
+        'setbd', 'bday', 'bdchannel'
+    ],
+    "Moderation": [
+        'lockdown', 'unlock'
     ],
     "Admin": [
-        'prefix', 'bdchannel'
+        'prefix',
     ],
 }
 
@@ -60,7 +87,6 @@ async def help(ctx: commands.Context, arg: str = None):
             text += f"```{category}```\n"
             for command in categoryinfo[category]:
                 text += f"**{command}**\n{everything[command][0]}\n\n"
-            text += "\n"
     else:
         data = everything.get(arg)
         if not data:
