@@ -115,6 +115,7 @@ bot.load_extension('exts.helpcmd')
 bot.load_extension('exts.funcmds')
 bot.load_extension('exts.GuildConfig')
 bot.load_extension('exts.administration')
+bot.load_extension('exts.errorhandler')
 bot.load_extension('jishaku')
 
 # bot come alive
