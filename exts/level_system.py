@@ -22,6 +22,7 @@ class LevelSystem(commands.Cog):
 
         await add_to_db(guild_id, member_id) : adds a member to the database of the respective server\n
     """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -36,7 +37,7 @@ class LevelSystem(commands.Cog):
         for guild in self.bot.guilds:
             self._cache[guild.id] = {}
 
-    async def give_exp(self, guild_id: int,  member_id: int, amount=None) -> None:
+    async def give_exp(self, guild_id: int, member_id: int, amount=None) -> None:
         """
         Function to give exp to a particular member
 
@@ -46,8 +47,11 @@ class LevelSystem(commands.Cog):
         :param amount: The amount of exp to give, default to None in which case the default level up exp is awarded
         :return: None
         """
+        if member_id not in self._cache[guild_id]:
+            await self.add_to_cache(guild_id, member_id)
+
         if not amount:
-            amount = 5*self._cache[guild_id][member_id]['boost']
+            amount = 5 * self._cache[guild_id][member_id]['boost']
         self._cache[guild_id][member_id]['exp'] += amount
 
     async def add_to_cache(self, guild_id: int, member_id: int) -> Union[dict, None]:
@@ -76,7 +80,7 @@ class LevelSystem(commands.Cog):
         :return: data(dict) - The member that was just put inside db, same format as cache.
         """
         if guild_id in self._cache and member_id in self._cache[guild_id]:
-            return
+            pass
 
         if type(guild_id) is not int:
             raise TypeError("guild id must be int")
@@ -111,7 +115,7 @@ class LevelSystem(commands.Cog):
                 await self.add_to_cache(guild_id, member_id)  # important
             return data
 
-    async def add_to_db(self, guild_id: int,  member_id: int) -> None:
+    async def add_to_db(self, guild_id: int, member_id: int) -> None:
         """
         A function that adds a new entry to the database with default values
 
@@ -235,7 +239,7 @@ class LevelSystem(commands.Cog):
         if ctx.guild.id in self._cache and target.id in self._cache[ctx.guild.id]:
             data = self._cache[ctx.guild.id][target.id]
         else:
-            data = await self.add_to_cache(ctx.guild.id, ctx.author.id)
+            data = await self.add_to_cache(ctx.guild.id, target.id)
 
         embed = discord.Embed(title=f"{target}",
                               description=f"You are currently on level : {data['level']}\n"
@@ -255,7 +259,7 @@ class LevelSystem(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    @commands.check(is_me)
+    @commands.has_guild_permissions(administrator=True)
     async def setmultiplier(self, ctx: commands.Context, target: discord.Member, multiplier: int):
         """
         Command to set the multiplier of a member, setting it to 0 will make it so they don't get any level, eliminating
@@ -269,6 +273,15 @@ class LevelSystem(commands.Cog):
             await self.add_to_cache(ctx.guild.id, target.id)
             self._cache[ctx.guild.id][target.id]['boost'] = int(multiplier)
         await ctx.send(f"{target}'s multiplier has been set to {multiplier}")
+
+    @commands.command()
+    @commands.has_guild_permissions(administrator=True)
+    async def giveexp(self, ctx: commands.Context, target: discord.Member, amount: int):
+        await self.give_exp(ctx.guild.id, target.id, amount=int(amount))
+        e = discord.Embed(title="Success",
+                          description=f"Added {amount} points to {target.mention}",
+                          colour=discord.Colour.green())
+        await ctx.send(embed=e)
 
     @commands.command()
     @commands.check(is_me)
