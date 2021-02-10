@@ -58,6 +58,19 @@ everything = {
         "(Mod) Lifts the lockdown (if any)",
         "unlock",
         "Makes it so that the `everyone` role has the permission to send messages and add reactions in the guild."
+    ],
+    'mute': [
+        "(Mod) Mutes a member preventing them from sending messages/adding reactions in the server",
+        "mute target duration",
+        "Target here is the member you'd like to mute, duration is the time you wish to mute them for, the only "
+        "acceptable format for time is shown by the example: \n`1d 2h 4m`\n"
+        "Therefore setting the duration to `1d 2h 4m` would mute your target for 1 day, 2 hours and 4 minutes"
+    ],
+    'unmute': [
+        "(Mod) Unmutes an already muted member, allowing them to send messages/add reactions",
+        "unmute target",
+        "target here is the member you wish to unmute, note that unmuting a member with a timed mute will end their "
+        "mute period at that instant"
     ]
 
 }
@@ -70,7 +83,7 @@ categoryinfo = {
         'setbd', 'bday', 'bdchannel'
     ],
     "Moderation": [
-        'lockdown', 'unlock'
+        'lockdown', 'unlock', 'mute', 'unmute'
     ],
     "Admin": [
         'prefix',
