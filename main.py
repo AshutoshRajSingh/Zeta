@@ -70,7 +70,7 @@ async def create_member_table(**kwargs):
 
 
 async def connect_to_db():
-    bot.pool = await asyncpg.create_pool(os.environ['DATABASE_URL'], ssl='require')
+    bot.pool = await asyncpg.create_pool(os.environ['DATABASE_URL'], ssl='require', max_size=20)
 
 
 async def check_tables():
