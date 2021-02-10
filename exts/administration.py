@@ -2,10 +2,10 @@ import discord
 from discord.ext import commands, tasks
 from discord.utils import get
 import datetime
-import asyncio
 
 
 async def create_mute_role(guild: discord.Guild):
+    """Creates a mute role in a guild members having it can't send messages or add reactions"""
     perms = discord.Permissions.none()
     newrole = await guild.create_role(name="Muted", permissions=perms)
 
@@ -16,17 +16,21 @@ async def create_mute_role(guild: discord.Guild):
 
     return newrole
 
+# The database for mutes will be queried every this minutes
 QUERY_INTERVAL_MINUTES = 30
 
 
+# Converts a string of the format 1d 2h 3m into the equivalent number of minutes
 def parsetime(time: str):
-    arr = time.split(' ')
+    arr = time.lower().split(' ')
     minutes = 0
     for elem in arr:
         if elem.endswith('h'):
             minutes += int(elem[0:len(elem)-1]) * 60
         elif elem.endswith('m'):
             minutes += int(elem[0:len(elem) - 1])
+        elif elem.endswith('d'):
+            minutes += int(elem[0:len(elem) - 1]) * 60 * 24
     return minutes
 
 
@@ -39,24 +43,13 @@ class administration(commands.Cog):
 
         self._cache = {}
 
-        # asyncio.get_event_loop().create_task(self.load_cache())
+        self.mute_poll.start()
 
     async def load_cache(self):
         """Loads cache for moderative actions, not in use currently but future plans involve this as requirement"""
         await self.bot.wait_until_ready()
         for guild in self.bot.guilds:
             self._cache[guild.id] = {}
-
-        async with self.bot.conn.acquire() as conn:
-            async with conn.transaction():
-                async for entry in conn.cursor("SELECT * FROM mutes"):
-                    self._cache[entry.get('guildid')][entry.get('id')] = {'muted_till': entry.get('muted_till')}
-
-                    if (entry.get('muted_till') - datetime.datetime.now()).minutes < 0:
-                        await self.perform_unmute(entry.get('guildid'), entry.get('id'))
-
-                    if (entry.get('muted_till') - datetime.datetime.now()).minutes < QUERY_INTERVAL_MINUTES:
-                        await discord.utils.sleep_until(entry.get('muted_till'))
 
     # ------------------------------------Moderative actions--------------------------------------------
 
@@ -82,12 +75,14 @@ class administration(commands.Cog):
             await ctx.send("Server doesn't seem to have mute configured yet, stand by please.")
             async with ctx.channel.typing():
                 mr = await create_mute_role(ctx.guild)
+                await ctx.send("Configured mute successfully")
 
         if not time:
             await target.add_roles(mr)
-            e = discord.Embed(description=f"{target} has been muted")
+            e = discord.Embed(description=f"{target} has been muted", colour=discord.Colour.red())
             e1 = discord.Embed(description=f"You have been muted from the server {ctx.guild} indefinitely, you'll only"
-                                           f"be able to send messages if a moderator unmutes you")
+                                           f"be able to send messages if a moderator unmutes you",
+                               colour=discord.Colour.red())
             await ctx.send(embed=e)
             await target.send(embed=e1)
 
@@ -96,6 +91,9 @@ class administration(commands.Cog):
 
             duration = parsetime(time)
             muted_till = datetime.datetime.utcnow() + datetime.timedelta(minutes=duration)
+
+            await self.bot.pool.execute("INSERT INTO mutes (id, guildid, mutedtill) VALUES ($1, $2, $3)",
+                                        target.id, ctx.guild.id, muted_till)
 
             e = discord.Embed(description=f"{target} has been muted till {muted_till}", colour=discord.Colour.red())
             e1 = discord.Embed(description=f"You have been muted from the server {ctx.guild} for {muted_till} (UTC)",
@@ -106,23 +104,57 @@ class administration(commands.Cog):
             if duration < QUERY_INTERVAL_MINUTES:
                 self.bot.loop.create_task(self.perform_unmute(ctx.guild.id, target.id, muted_till))
 
+    @commands.command()
+    @commands.has_guild_permissions(manage_messages=True)
+    async def unmute(self, ctx: commands.Context, target: discord.Member):
+        await self.perform_unmute(ctx.guild.id, target.id, datetime.datetime.utcnow())
+        await ctx.send(embed=discord.Embed(description=f"Unmuted {target.mention}", colour=discord.Colour.green()))
+
     async def perform_unmute(self, guildid, targetid, when: datetime.datetime):
+        """Unmutes a target in a guild at a specified time"""
+
+        # Gotta get the guild and member objects to perform the unmute
         guild = self.bot.get_guild(guildid)
         target = guild.get_member(targetid)
-        await discord.utils.sleep_until(when)
-        if target:
-            role = get(guild.roles, name='Muted')
-            await target.remove_roles(role)
 
-            e = discord.Embed(description=f"Your mute period has been completed, you will now be able to send messages in"
+        # Neat little feature to sleep till a specified timestamp in UTC
+        await discord.utils.sleep_until(when)
+
+        # This checks if the target left the server because angry on being muted
+        if target:
+            # Remove the muted role, currently using get, in the near future might just save the muted role ids into
+            # the database
+            role = get(guild.roles, name='Muted')
+
+            # Checks if member was already unmuted manually in which case no need to send the message
+            if role in target.roles:
+                await target.remove_roles(role)
+
+                # Send a message to the target informing them that they were unmuted
+                e = discord.Embed(description=f"Your mute period has been completed, you will now be able to send messages in "
                                           f"{guild} again.", colour=discord.Colour.green())
-            await target.send(embed=e)
+                await target.send(embed=e)
+
+        # Gotta delete the entry from the database now that the unmute has been done
+        await self.bot.pool.execute("DELETE FROM mutes WHERE id = $1 AND guildid = $2",
+                                    targetid, guildid)
 
     @tasks.loop(minutes=QUERY_INTERVAL_MINUTES)
     async def mute_poll(self):
+        """Background loop that takes care of querying the databse and looking up entries where the time till
+        a target has been muted for is before the time the next iteration of the loop will happen."""
+        await self.bot.wait_until_ready()
         async with self.bot.pool.acquire() as conn:
-            # This will serve to make database queries to make the timed actions more robust
-            pass
+            async with conn.transaction():
+                future = datetime.datetime.utcnow() + datetime.timedelta(minutes=QUERY_INTERVAL_MINUTES)
+                async for entry in conn.cursor("SELECT * FROM mutes WHERE mutedtill < $1",
+                                               future):
+
+                    # Creating an async task to perform unmutes, the future handling is done in the perform_unmute
+                    # function itself
+                    self.bot.loop.create_task(self.perform_unmute(entry.get('guildid'),
+                                                                  entry.get('id'),
+                                                                  entry.get('mutedtill')))
 
 
 def setup(bot: commands.Bot):
