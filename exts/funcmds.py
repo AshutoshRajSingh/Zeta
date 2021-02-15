@@ -76,9 +76,14 @@ class funcmds(commands.Cog):
                               colour=discord.Colour.green())
         await ctx.send(embed=embed)
 
-    @tasks.loop(hours=24)
+    @staticmethod
+    async def send_wish(guildid: int, memberid: int, when: datetime.datetime):
+        title = f"{2} has their birthday today",
+        description = "Reblog if u eating beans",
+        colour = discord.Colour.blue()
+
+    @tasks.loop(minutes=20)
     async def bday_poll(self):
-        """Loop that runs once per day checking if a birthday has happened and sending relevant message in the guild"""
 
         for guild in self.bot.guilds:
             if type(guild.id) is not int:
@@ -95,16 +100,18 @@ class funcmds(commands.Cog):
                     tempdata = await tempcur.fetchrow()
                     try:
                         alert_channel_id = tempdata.get('bdayalert')
+                        alert_time = tempdata.get('bdayalerttime')
                     except AttributeError:
                         pass
 
-                    if alert_channel_id:
-                        async for record in conn.cursor(query):
-                            embed = discord.Embed(
-                                title=f"{self.bot.get_user(record.get('id'))} has their birthday today",
-                                description="Reblog if u eating beans",
-                                colour=discord.Colour.blue())
-                            await (guild.get_channel(alert_channel_id)).send(embed=embed)
+                    now = datetime.datetime.utcnow()
+                    future = now + datetime.timedelta(minutes=20)
+
+                    if alert_time:
+                        if (future-alert_time).minutes < 20:
+                            if alert_channel_id:
+                                async for record in conn.cursor(query):
+                                    self.bot.loop.create_task(self.send_wish(guild.id, record.get('id'), alert_time))
 
     @bday_poll.before_loop
     async def kellog(self):
