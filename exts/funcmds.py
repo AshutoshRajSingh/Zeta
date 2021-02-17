@@ -76,11 +76,18 @@ class funcmds(commands.Cog):
                               colour=discord.Colour.green())
         await ctx.send(embed=embed)
 
-    @staticmethod
-    async def send_wish(guildid: int, memberid: int, when: datetime.datetime):
-        title = f"{2} has their birthday today",
-        description = "Reblog if u eating beans",
-        colour = discord.Colour.blue()
+    async def send_wish(self, guildid: int, channelid: int, memberid: int, when: datetime.datetime):
+        print(f"task created for {guildid}")
+        await discord.utils.sleep_until(when)
+
+        guild = self.bot.get_guild(guildid)
+        channel = guild.get_channel(channelid)
+        m = guild.get_member(memberid)
+        e = discord.Embed(title=f"{m} has their birthday today!",
+                          description=f"Reblog if u eating beans",
+                          colour=discord.Colour.blue())
+
+        await channel.send(embed=e)
 
     @tasks.loop(minutes=20)
     async def bday_poll(self):
@@ -91,31 +98,46 @@ class funcmds(commands.Cog):
 
             table_name = f"server_members{guild.id}"
 
-            query = f"SELECT id, birthday FROM {table_name} " + "WHERE DATE_PART('day', birthday) = date_part('day', CURRENT_DATE) AND DATE_PART('month', birthday) = date_part('month', CURRENT_DATE)"
+            now = datetime.datetime.utcnow()
+            future = now + datetime.timedelta(minutes=20)
+
+            query1 = f"SELECT id, bdayalert, bdayalerttime FROM guilds WHERE bdayalerttime < $1 AND bdayalerttime > $2"
+
+            query = f"SELECT id, birthday FROM {table_name} " + "WHERE DATE_PART('day', birthday) = DATE_PART('day', CURRENT_DATE) AND DATE_PART('month', birthday) = DATE_PART('month', CURRENT_DATE)"
+
             async with self.bot.pool.acquire() as conn:
                 async with conn.transaction():
 
-                    # Temporary cursor to fetch the id of the channel to set alerts in
-                    tempcur = await conn.cursor("SELECT id, bdayalert FROM guilds WHERE id = $1", guild.id)
-                    tempdata = await tempcur.fetchrow()
-                    try:
-                        alert_channel_id = tempdata.get('bdayalert')
-                        alert_time = tempdata.get('bdayalerttime')
-                    except AttributeError:
-                        pass
+                    async for guild_record in conn.cursor(query1, future, now):
+                        alert_time = guild_record.get('bdayalerttime').strftime("%H %M %S")
 
-                    now = datetime.datetime.utcnow()
-                    future = now + datetime.timedelta(minutes=20)
+                        temp_time_str = datetime.datetime.utcnow().strftime('%d %m %y')
 
-                    if alert_time:
-                        if (future-alert_time).minutes < 20:
+                        new_time = datetime.datetime.strptime(f"{temp_time_str} {alert_time}", "%d %m %y %H %M %S")
+
+                        alert_channel_id = guild_record.get('bdayalert')
+
+                        if alert_time:
                             if alert_channel_id:
                                 async for record in conn.cursor(query):
-                                    self.bot.loop.create_task(self.send_wish(guild.id, record.get('id'), alert_time))
+                                    self.bot.loop.create_task(
+                                        self.send_wish(guild.id, alert_channel_id, record.get('id'), new_time))
 
     @bday_poll.before_loop
     async def kellog(self):
         await self.bot.wait_until_ready()
+
+    @commands.command()
+    @commands.has_guild_permissions(manage_guild=True)
+    async def bdalerttime(self, ctx: commands.Context, *, time):
+        tim = datetime.datetime.strptime(time, "%H %M").time()
+        await self.bot.pool.execute("UPDATE guilds SET bdayalerttime = $1 WHERE id = $2", tim, ctx.guild.id)
+
+        e = discord.Embed(title="Success!",
+                          description=f"Birthday alerts will be sent out on this server at {tim.strftime('%H:%M')} (UTC)",
+                          colour=discord.Colour.green())
+        await ctx.send(embed=e)
+        await self.bday_poll()
 
     @commands.command()
     @commands.check(lambda ctx: ctx.author.id == 501451372147769355)
