@@ -77,7 +77,6 @@ class funcmds(commands.Cog):
         await ctx.send(embed=embed)
 
     async def send_wish(self, guildid: int, channelid: int, memberid: int, when: datetime.datetime):
-        print(f"task created for {guildid}")
         await discord.utils.sleep_until(when)
 
         guild = self.bot.get_guild(guildid)
