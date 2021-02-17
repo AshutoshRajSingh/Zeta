@@ -71,6 +71,13 @@ everything = {
         "unmute target",
         "target here is the member you wish to unmute, note that unmuting a member with a timed mute will end their "
         "mute period at that instant"
+    ],
+    'bdalerttime': [
+        "(Admin) Sets the time at which the bot will send out birthday alerts in the server",
+        "bdalerttime time",
+        "`time` here is the time at which you want birthday alerts to be sent out on your server, it has to be in UTC, "
+        "and the ony acceptable format is `HH MM` where HH is hours of the day (in 24h format) and MM is the minutes "
+        "of the day"
     ]
 
 }
@@ -80,7 +87,7 @@ categoryinfo = {
         'level', 'lb', 'giveexp', 'setmultiplier'
     ],
     "Birthday system": [
-        'setbd', 'bday', 'bdchannel'
+        'setbd', 'bday', 'bdchannel', 'bdalerttime'
     ],
     "Moderation": [
         'lockdown', 'unlock', 'mute', 'unmute'
