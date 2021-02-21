@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands, tasks
-import asyncio
 import datetime
 
 
@@ -10,7 +9,7 @@ class funcmds(commands.Cog):
         self.bday_poll.start()
 
     @commands.command()
-    async def bday(self, ctx: commands.Context, target: discord.Member):
+    async def bday(self, ctx: commands.Context, target: discord.Member) -> None:
         """
         Fetches a member's birthday from the database, they need to have registered their birthday in that particular
         guild for it to work.
@@ -77,6 +76,18 @@ class funcmds(commands.Cog):
         await ctx.send(embed=embed)
 
     async def send_wish(self, guildid: int, channelid: int, memberid: int, when: datetime.datetime):
+        """
+        Sends a birthday wish in a guild at a specified time in UTC
+
+        Args:
+            guildid:
+            channelid:
+            memberid:
+            when:
+
+        Returns: None
+
+        """
         await discord.utils.sleep_until(when)
 
         guild = self.bot.get_guild(guildid)
@@ -92,30 +103,39 @@ class funcmds(commands.Cog):
     async def bday_poll(self):
 
         for guild in self.bot.guilds:
+
             if type(guild.id) is not int:
-                raise ValueError("Somehow guild id is not an int")
+                raise TypeError("Somehow guild id is not an int")
 
             table_name = f"server_members{guild.id}"
 
+            # Future is the time of the next iteration of the loop
             now = datetime.datetime.utcnow()
             future = now + datetime.timedelta(minutes=20)
 
+            # Query the database to find the time at which alert is to be sent out
             query1 = f"SELECT id, bdayalert, bdayalerttime FROM guilds WHERE bdayalerttime < $1 AND bdayalerttime > $2"
 
+            # Query to fetch the members who have their birthday on that day
             query = f"SELECT id, birthday FROM {table_name} " + "WHERE DATE_PART('day', birthday) = DATE_PART('day', CURRENT_DATE) AND DATE_PART('month', birthday) = DATE_PART('month', CURRENT_DATE)"
 
             async with self.bot.pool.acquire() as conn:
                 async with conn.transaction():
 
                     async for guild_record in conn.cursor(query1, future, now):
-                        alert_time = guild_record.get('bdayalerttime').strftime("%H %M %S")
 
+                        # Converting alert time to string here as it needs to be merged with the whole
+                        # date to make it datetime instead of just time
+                        alert_time = guild_record.get('bdayalerttime').strftime("%H %M %S")
                         temp_time_str = datetime.datetime.utcnow().strftime('%d %m %y')
 
+                        # Alert time is converted into datetime object with date of today
                         new_time = datetime.datetime.strptime(f"{temp_time_str} {alert_time}", "%d %m %y %H %M %S")
 
+                        # Get the channel id in which to send alerts
                         alert_channel_id = guild_record.get('bdayalert')
 
+                        # If an alert time and alert channel id have been set only then will an alert be sent.
                         if alert_time:
                             if alert_channel_id:
                                 async for record in conn.cursor(query):
@@ -129,6 +149,9 @@ class funcmds(commands.Cog):
     @commands.command()
     @commands.has_guild_permissions(manage_guild=True)
     async def bdalerttime(self, ctx: commands.Context, *, time):
+        """
+        Sets the time of the day at which birthday alerts will be sent on a guild. (UTC)
+        """
         tim = datetime.datetime.strptime(time, "%H %M").time()
         await self.bot.pool.execute("UPDATE guilds SET bdayalerttime = $1 WHERE id = $2", tim, ctx.guild.id)
 
@@ -140,7 +163,7 @@ class funcmds(commands.Cog):
 
     @commands.command()
     @commands.check(lambda ctx: ctx.author.id == 501451372147769355)
-    async def checkbd(self, ctx):
+    async def checkbd(self, ctx: commands.Context):
         await self.bday_poll()
 
 
