@@ -259,7 +259,7 @@ class LevelSystem(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    @commands.has_guild_permissions(administrator=True)
+    @commands.has_guild_permissions(manage_messages=True)
     async def setmultiplier(self, ctx: commands.Context, target: discord.Member, multiplier: int):
         """
         Command to set the multiplier of a member, setting it to 0 will make it so they don't get any level, eliminating
@@ -275,7 +275,7 @@ class LevelSystem(commands.Cog):
         await ctx.send(f"{target}'s multiplier has been set to {multiplier}")
 
     @commands.command()
-    @commands.has_guild_permissions(administrator=True)
+    @commands.has_guild_permissions(manage_messages=True)
     async def giveexp(self, ctx: commands.Context, target: discord.Member, amount: int):
         await self.give_exp(ctx.guild.id, target.id, amount=int(amount))
         e = discord.Embed(title="Success",
