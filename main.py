@@ -88,7 +88,7 @@ async def change_presence():
     await bot.change_presence(activity=discord.Game("Type .help for usage!"))
 
 
-asyncio.get_event_loop().create_task(connect_to_db())
+asyncio.get_event_loop().run_until_complete(connect_to_db())
 asyncio.get_event_loop().create_task(check_tables())
 asyncio.get_event_loop().create_task(change_presence())
 asyncio.get_event_loop().create_task(load_prefixes(bot))
@@ -116,6 +116,7 @@ bot.load_extension('exts.funcmds')
 bot.load_extension('exts.GuildConfig')
 bot.load_extension('exts.administration')
 bot.load_extension('exts.errorhandler')
+bot.load_extension('exts.utility')
 bot.load_extension('jishaku')
 
 # bot come alive
