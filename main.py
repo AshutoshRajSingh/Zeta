@@ -1,11 +1,17 @@
+import os
+import sys
+import time
 import discord
 import asyncpg
 import asyncio
-import os
+import datetime
+
 from discord.ext import commands
 
-intents = discord.Intents.all()
+# Store time of starting
+start = datetime.datetime.utcnow()
 
+intents = discord.Intents.all()
 
 """-------------------Doing all the command prefix stuff here---------------------------"""
 
@@ -93,13 +99,7 @@ asyncio.get_event_loop().create_task(check_tables())
 asyncio.get_event_loop().create_task(change_presence())
 asyncio.get_event_loop().create_task(load_prefixes(bot))
 
-
 """------------Events that I didn't bother making a separate cog for, if they become too much might do the same------"""
-
-
-@bot.event
-async def on_ready():
-    print("successfully started process")
 
 
 @bot.event
@@ -107,8 +107,47 @@ async def on_guild_join(guild):
     await create_member_table(guild=guild)
 
 
-"""-----------Load all the extensions one at a time like an absolute peasant heheheheheueueue-----------"""
+"""----------------------------Commands-------------------------------------------------------------------"""
 
+
+def get_privileged_intents():
+    retval = ""
+    if bot.intents.members:
+        retval += "members\n"
+    if bot.intents.presences:
+        retval += "presences\n"
+    return retval
+
+
+@bot.command()
+async def info(ctx: commands.Context):
+    e = discord.Embed(title=f"{bot.user.name}",
+                      description=f"A big dumdum discord bot made by {bot.get_user(501451372147769355)}",
+                      colour=discord.Colour.blue())
+
+    # Calculate uptime
+    uptime = datetime.datetime.utcnow() - start
+    hours = int(uptime.seconds / 3600)
+    mins = (uptime.seconds // 60) % 60
+    secs = uptime.seconds - (hours * 3600 + mins * 60)
+    e.add_field(name="Uptime", value=f"{hours}:{mins}:{secs}", inline=True)
+    e.add_field(name="Websocket latency", value=f"{int(bot.latency * 1000)}ms", inline=True)
+
+    # Calculate database latency
+    temp_start = time.time()
+    await bot.pool.execute('select')
+    e.add_field(name="Database latency", value=f"{int((time.time() - temp_start) * 1000)}ms", inline=True)
+
+    e.add_field(name="Servers joined", value=len(bot.guilds), inline=True)
+    e.add_field(name="Users watched", value=len(bot.users), inline=True)
+    e.add_field(name="Privileged Intents", value=get_privileged_intents())
+    e.add_field(name="Python version", value=f"{sys.version[:5]}")
+    e.add_field(name="discord.py version", value=f"{discord.__version__}")
+    e.add_field(name="asyncpg version", value=f"{asyncpg.__version__}")
+    await ctx.send(embed=e)
+
+
+"""-----------Load all the extensions one at a time like an absolute peasant heheheheheueueue-----------"""
 
 bot.load_extension('exts.level_system')
 bot.load_extension('exts.helpcmd')
@@ -119,5 +158,7 @@ bot.load_extension('exts.errorhandler')
 bot.load_extension('exts.utility')
 bot.load_extension('jishaku')
 
-# bot come alive
+print(f"Successfully started process at {datetime.datetime.utcnow()}")
+
+
 bot.run(os.environ['BOT_TOKEN'])
