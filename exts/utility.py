@@ -6,6 +6,10 @@ class UtilityCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    async def delete_tag(self, tagname, guildid):
+        query = "DELETE FROM tags WHERE name = $1 AND guildid = $2"
+        await self.bot.pool.execute(query, tagname, guildid)
+
     @commands.group(invoke_without_command=True)
     async def tag(self, ctx: commands.Context, *, tagname):
         # Fetches a tag stored in db.
@@ -53,8 +57,7 @@ class UtilityCog(commands.Cog):
         # If user has manage_messages permission, delete straignt away
 
         if ctx.author.guild_permissions.manage_messages:
-            query = "DELETE FROM tags WHERE name = $1 AND guildid = $2"
-            await self.bot.pool.execute(query, tagname, ctx.guild.id)
+            await self.delete_tag(tagname, ctx.guild.id)
             await ctx.send(f"Tag {tagname} successfully deleted")
 
         # Need to check if command user is the author of that tag or not
@@ -66,8 +69,7 @@ class UtilityCog(commands.Cog):
             if data:
                 # Check if user is tag author
                 if data.get('authorid') == ctx.author.id:
-                    query = "DELETE FROM tags WHERE name = $1 AND guildid = $2"
-                    await self.bot.pool.execute(query, tagname, ctx.guild.id)
+                    await self.delete_tag(tagname, ctx.guild.id)
                     await ctx.send(f"Tag `{tagname}` successfully deleted")
                 else:
                     await ctx.send("You need to have the `manage_messages` permission to delete someone else's tags")
