@@ -259,7 +259,7 @@ class LevelSystem(commands.Cog):
         embed = discord.Embed(title="Server leaderboard",
                               colour=discord.Colour.green())
         for entry in data:
-            embed.add_field(name=f"{entry.get('rank')}.{ctx.guild.get_member(entry.get('id'))}",
+            embed.add_field(name=f"{entry.get('rank')}.{ctx.guild.get_member(entry.get('id')).display_name}",
                             value=f"Level: {entry.get('level')} Exp: {entry.get('exp')}",
                             inline=True)
         await ctx.send(embed=embed)
