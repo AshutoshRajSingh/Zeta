@@ -78,6 +78,31 @@ everything = {
         "`time` here is the time at which you want birthday alerts to be sent out on your server, it has to be in UTC, "
         "and the ony acceptable format is `HH MM` where HH is hours of the day (in 24h format) and MM is the minutes "
         "of the day"
+    ],
+    'tag': [
+        'Retrieves an earlier stored tag',
+        'tag tagname',
+        'tagname here is the name of the tag you wish to fetch, for example to get a tag named '
+        '\'boop\' you would use `tag boop` '
+    ],
+    'tag create': [
+        'Stores text for later retreival',
+        'tag create tagname content',
+        'tagname here is the name you wish the new tag to have content here is the text you wish to store, for example to '
+        'store the text "spaghetti" under the tagname "pasta"'
+        ' you would use `tag create pasta spaghetti`'
+    ],
+    'tag edit': [
+        'Edits a tag owned by you',
+        'tag edit tagname newcontent',
+        'tagname is the name of the tag you wish to edit, newcontent is the text you wish to replace it with, note that '
+        'you can only edit tags you own'
+    ],
+    'tag delete': [
+        'Deletes a tag already created by someone',
+        'tag delete tagname',
+        "tagname here is the name of the tag you wish to delete, if you own it, you can delete it straightforwardly, if you don't you "
+        "will need the server permission 'Manage messages' in order to delete it."
     ]
 
 }
@@ -89,6 +114,9 @@ categoryinfo = {
     "Birthday system": [
         'setbd', 'bday', 'bdchannel', 'bdalerttime'
     ],
+    "Utility": [
+        'tag', 'tag create', 'tag edit', 'tag delete'
+    ],
     "Moderation": [
         'lockdown', 'unlock', 'mute', 'unmute'
     ],
@@ -99,7 +127,7 @@ categoryinfo = {
 
 
 @commands.command()
-async def help(ctx: commands.Context, arg: str = None):
+async def help(ctx: commands.Context, *, arg: str = None):
     if not arg:
         title = "Commands"
         text = ""
