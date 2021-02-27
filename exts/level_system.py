@@ -240,7 +240,9 @@ class LevelSystem(commands.Cog):
             data = self._cache[ctx.guild.id][target.id]
         else:
             data = await self.add_to_cache(ctx.guild.id, target.id)
-
+        if not data:
+            await ctx.send(f"{target} hasn't been ranked yet! tell them to send some messages to start.")
+            return
         embed = discord.Embed(title=f"{target}",
                               description=f"You are currently on level : {data['level']}\n"
                                           f"With exp : {data['exp']}",
