@@ -173,10 +173,10 @@ class LevelSystem(commands.Cog):
 
         async with self.bot.pool.acquire() as conn:
             async with conn.transaction():
-                top10 = ""
+                top10 = []
                 rank = 1
-                async for entry in conn.cursor(f"SELECT id, exp FROM {table_name} ORDER BY exp DESC LIMIT $1", limit):
-                    top10 += f"{rank}. {guild.get_member(entry.get('id'))}, exp: {entry.get('exp')}\n"
+                async for entry in conn.cursor(f"SELECT id, exp, level FROM {table_name} ORDER BY exp DESC LIMIT $1", limit):
+                    top10 += [{'rank': rank, 'id': entry.get('id'), 'exp': entry.get('exp'), 'level': entry.get('level')}]
                     rank += 1
                 return top10
 
@@ -255,9 +255,13 @@ class LevelSystem(commands.Cog):
         Shows the top 10 server members based off their exp
         """
         data = await self.fetch_top_n(ctx.guild, limit=10)
+
         embed = discord.Embed(title="Server leaderboard",
-                              description=data,
                               colour=discord.Colour.green())
+        for entry in data:
+            embed.add_field(name=f"{entry.get('rank')}.{ctx.guild.get_member(entry.get('id'))}",
+                            value=f"Level: {entry.get('level')} Exp: {entry.get('exp')}",
+                            inline=True)
         await ctx.send(embed=embed)
 
     @commands.command()
