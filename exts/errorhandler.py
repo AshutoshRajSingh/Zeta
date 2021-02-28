@@ -58,6 +58,7 @@ class CommandErrorHandler(commands.Cog):
             # and if they did, delete that error message.
             try:
                 await self.bot.wait_for('reaction_add', check=check, timeout=25)
+                await ctx.message.remove_reaction('\U00002757', ctx.guild.me)
                 await msg.delete()
 
             except asyncio.TimeoutError:
