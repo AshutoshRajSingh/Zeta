@@ -1,3 +1,4 @@
+import os
 import sys
 import asyncpg
 import asyncio
@@ -11,14 +12,19 @@ then use
 python autodb.py <database_url> init
 
 (Without the <>)
+
+ALTERNATIVELY 
+
+If you have already set the os environment variable DATABASE_URL equal to the url of your database, use:
+
+python autodb.py osenv init
 """
 
 
-async def init():
-    url = sys.argv[1]
+async def init(Url):
 
     try:
-        conn = await asyncpg.connect(url)
+        conn = await asyncpg.connect(Url)
     except socket.gaierror:
         print("Couldn't connect to the database, possibly because invalid url provided, remember it has to be of the "
               "format - postgres://<username>:<password>@<host>:<port>/<database_name>")
@@ -49,5 +55,10 @@ async def init():
 if len(sys.argv) < 3:
     raise ValueError("Missing one or more required command line argument(s)")
 
+if sys.argv[1] == 'osenv':
+    url = os.environ['DATABASE_URL']
+else:
+    url = sys.argv[1]
+
 if sys.argv[2] == 'init':
-    asyncio.get_event_loop().run_until_complete(init())
+    asyncio.get_event_loop().run_until_complete(init(url))
