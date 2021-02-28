@@ -103,8 +103,19 @@ everything = {
         'tag delete tagname',
         "tagname here is the name of the tag you wish to delete, if you own it, you can delete it straightforwardly, if you don't you "
         "will need the server permission 'Manage messages' in order to delete it."
+    ],
+    'reddit': [
+        'Used to get a random post from a subreddit',
+        'reddit subreddit_name',
+        'subreddit_name here is the name of the subreddit from which you wish to get a post\n'
+        'Alternate names for this command: `r`'
+    ],
+    'r': [
+        'Used to get a random post from a subreddit',
+        'reddit subreddit_name',
+        'subreddit_name here is the name of the subreddit from which you wish to get a post\n'
+        'Alternate names for this command: `r`'
     ]
-
 }
 
 categoryinfo = {
@@ -115,7 +126,7 @@ categoryinfo = {
         'setbd', 'bday', 'bdchannel', 'bdalerttime'
     ],
     "Utility": [
-        'tag', 'tag create', 'tag edit', 'tag delete'
+        'tag', 'tag create', 'tag edit', 'tag delete', 'reddit'
     ],
     "Moderation": [
         'lockdown', 'unlock', 'mute', 'unmute'
