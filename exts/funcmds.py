@@ -1,3 +1,4 @@
+import time
 import random
 import aiohttp
 import discord
@@ -170,7 +171,10 @@ class funcmds(commands.Cog):
 
     @commands.command(aliases=['r'])
     async def reddit(self, ctx: commands.Context, subreddit: str):
-        ROUTE = 'https://www.reddit.com/r/%s.json'
+        BASE = 'https://reddit.com'
+        ROUTE = BASE + '/r/%s.json'
+
+        start = time.time()
 
         async with aiohttp.ClientSession() as cs:
             async with cs.get(ROUTE % subreddit) as r:
@@ -203,8 +207,14 @@ class funcmds(commands.Cog):
                     continue
 
                 e = discord.Embed(title=selected['data']['title'],
+                                  url=BASE+selected['data']['permalink'],
                                   colour=discord.Colour.red())
                 e.set_image(url=selected['data']['url_overridden_by_dest'])
+
+                duration = time.time()-start
+                e.set_footer(text=f'Requested by {ctx.author}, fetched in %.2gs' % duration,
+                             icon_url=ctx.author.avatar_url)
+
                 await ctx.send(embed=e)
                 return
 
