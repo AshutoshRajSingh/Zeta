@@ -25,6 +25,8 @@ async def load_prefixes(bott: commands.Bot):
 
 
 async def get_pre(bott: commands.Bot, message: discord.Message):
+    if message.guild is None:
+        return '.'
     prefix = bott.prefixes.get(message.guild.id)
     if prefix:
         return prefix
@@ -91,7 +93,7 @@ async def check_tables():
 
 async def change_presence():
     await bot.wait_until_ready()
-    await bot.change_presence(activity=discord.Game("Type .help for usage!"))
+    await bot.change_presence(activity=discord.Game("Ping me for usage"))
 
 
 asyncio.get_event_loop().run_until_complete(connect_to_db())
