@@ -140,7 +140,7 @@ class LevelSystem(commands.Cog):
         """
         data = self._cache[guildid]
         table_name = 'server_members' + str(guildid)
-        for memberid in data:
+        for memberid in list(data):
             current = data[memberid]
             query = f"UPDATE {table_name} " \
                     f"SET level = $1, " \
@@ -261,7 +261,7 @@ class LevelSystem(commands.Cog):
         for entry in data:
             embed.add_field(name=f"{entry.get('rank')}.{ctx.guild.get_member(entry.get('id')).display_name}",
                             value=f"Level: {entry.get('level')} Exp: {entry.get('exp')}",
-                            inline=True)
+                            inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
