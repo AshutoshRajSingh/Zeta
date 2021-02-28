@@ -109,6 +109,18 @@ async def on_guild_join(guild):
     await create_member_table(guild=guild)
 
 
+@bot.listen('on_message')
+async def ping_reminder(message: discord.Message):
+    if message.guild.me in message.mentions:
+        prefix = bot.prefixes.get(message.guild.id)
+        if prefix:
+            pass
+        else:
+            prefix = '.'
+        await message.channel.send(f"Did you forget my prefix? For this server, it is `{prefix}`\n"
+                                   f"Use `{prefix}help` for more information!\n"
+                                   f"Hint: Admins can change the server prefix using the `prefix` command")
+
 """----------------------------Commands-------------------------------------------------------------------"""
 
 
