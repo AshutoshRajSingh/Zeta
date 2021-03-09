@@ -1,5 +1,38 @@
+import io
 import discord
+from PIL import Image
 from discord.ext import commands
+from matplotlib import pyplot as plt
+
+
+def generate_plot(x, y):
+    """
+    Generates a plot based on given data and returns a python file like object that has the plot image encoded in png
+
+    Args:
+        x: iterable containing points in x axis
+        y: iterable containing points in y axis
+
+        (both have to be same length, duh)
+
+    Returns: output_buffer : an io.BytesIO object that has the png image data.
+    """
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(x, y)
+    temp = io.BytesIO()
+
+    # Save plot into temporary buffer
+    fig.savefig(temp)
+
+    # PIL handles encoding the buffer into png format
+    with Image.open(temp) as plot_image:
+        # The output buffer
+        output_buffer = io.BytesIO()
+        plot_image.save(output_buffer, "png")
+        output_buffer.seek(0)
+        temp.seek(0)
+
+    return output_buffer
 
 
 class UtilityCog(commands.Cog):
@@ -75,6 +108,22 @@ class UtilityCog(commands.Cog):
                     await ctx.send("You need to have the `manage_messages` permission to delete someone else's tags")
             else:
                 await ctx.send("Tag not found")
+
+    @commands.command()
+    async def plotdata(self, ctx: commands.Context, *, data: str):
+        d = data.split(';')
+        x = [int(e) for e in d[0].split(',')]
+        y = [int(e) for e in d[1].split(',')]
+
+        f = await self.bot.loop.run_in_executor(None, generate_plot, x, y)
+
+        file = discord.File(f, filename='plot.png')
+        e = discord.Embed(title='Plot successful!', colour=discord.Colour.green())
+        e.set_image(url='attachment://plot.png')
+        e.set_footer(text=f'Requested by {ctx.author.display_name} | Powered by matplotlib',
+                     icon_url=ctx.author.avatar_url)
+
+        await ctx.send(file=file, embed=e)
 
 
 def setup(bot: commands.Bot):
