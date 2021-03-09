@@ -1,4 +1,5 @@
 import discord
+import datetime
 from discord.ext import commands, tasks
 from math import floor, sqrt
 from typing import Union
@@ -190,7 +191,7 @@ class LevelSystem(commands.Cog):
         for guildId in self._cache:
             await self.dump_single_guild(guildId)
             self._cache[guildId] = {}
-        print("Database updated")
+        print(f"Level system database updated at {datetime.datetime.utcnow()}")
 
     @update_level_db.before_loop
     async def preloop(self) -> None:
