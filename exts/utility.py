@@ -21,18 +21,11 @@ def generate_plot(x, y):
     ax.plot(x, y)
     temp = io.BytesIO()
 
-    # Save plot into temporary buffer
-    fig.savefig(temp)
+    # Save plot into buffer
+    fig.savefig(temp, format='png')
+    temp.seek(0)
 
-    # PIL handles encoding the buffer into png format
-    with Image.open(temp) as plot_image:
-        # The output buffer
-        output_buffer = io.BytesIO()
-        plot_image.save(output_buffer, "png")
-        output_buffer.seek(0)
-        temp.seek(0)
-
-    return output_buffer
+    return temp
 
 
 class UtilityCog(commands.Cog):
