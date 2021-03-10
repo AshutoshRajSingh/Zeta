@@ -22,10 +22,9 @@ async def get_pre(bott: commands.Bot, message: discord.Message):
         return "."
 
 
-bot = commands.Bot(command_prefix=get_pre, intents=intents)
+bot = commands.Bot(command_prefix=get_pre, intents=intents, help_command=None)
 bot.prefixes = {}
 bot.initinit = False
-bot.remove_command('help')
 
 # This takes care of doing the stuff that needs to happen as bot starts, for example establishing a connection
 # to the database etc.
