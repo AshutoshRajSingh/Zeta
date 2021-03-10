@@ -34,7 +34,7 @@ def parsetime(time: str):
     return minutes
 
 
-class administration(commands.Cog):
+class Administration(commands.Cog):
     """
     Class that implements administration commands for a guild
     """
@@ -158,4 +158,4 @@ class administration(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(administration(bot))
+    bot.add_cog(Administration(bot))

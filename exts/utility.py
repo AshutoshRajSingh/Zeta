@@ -28,7 +28,7 @@ def generate_plot(x, y):
     return temp
 
 
-class UtilityCog(commands.Cog):
+class Utility(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -120,4 +120,4 @@ class UtilityCog(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(UtilityCog(bot))
+    bot.add_cog(Utility(bot))

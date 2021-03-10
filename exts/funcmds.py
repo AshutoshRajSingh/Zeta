@@ -6,7 +6,7 @@ import datetime
 from discord.ext import commands, tasks
 
 
-class funcmds(commands.Cog):
+class FunCmds(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.bday_poll.start()
@@ -225,4 +225,4 @@ class funcmds(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(funcmds(bot))
+    bot.add_cog(FunCmds(bot))

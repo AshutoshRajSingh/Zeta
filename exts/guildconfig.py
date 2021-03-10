@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 
-class ConfigCommands(commands.Cog):
+class GuildConfig(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -43,4 +43,4 @@ class ConfigCommands(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(ConfigCommands(bot))
+    bot.add_cog(GuildConfig(bot))
