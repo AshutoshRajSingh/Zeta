@@ -13,6 +13,7 @@ def start(bot: commands.Bot):
 
     bot.loop.run_until_complete(connect_to_db())
     db = util.DB(bot.pool)
+    bot.db = db
 
     async def check_tables():
         """
