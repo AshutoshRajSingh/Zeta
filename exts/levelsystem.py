@@ -10,6 +10,9 @@ def is_me(ctx):
     return ctx.author.id == 501451372147769355
 
 
+QUERY_INTERVAL_MINUTES = 10
+
+
 class LevelSystem(commands.Cog):
     """
     A Cog that implements a level system for messaging on multiple discord servers.\n
@@ -86,35 +89,21 @@ class LevelSystem(commands.Cog):
         if type(guild_id) is not int:
             raise TypeError("guild id must be int")
 
-        async with self.bot.pool.acquire() as conn:
-            async with conn.transaction():
+        data = await self.bot.db.fetch_member(guild_id, member_id)
 
-                # Set the table name
-                table_name = "server_members" + str(guild_id)
-
-                # The query to execute, $1 notation used for sanitization
-
-                query = f"SELECT * FROM {table_name} WHERE id = $1"
-                cur = await conn.cursor(query, member_id)
-
-                # The data returned by querying the database, defaults to None if record was not present
-                data = await cur.fetchrow()
-
-            # Can only do this stuff if there actually is relevant data in the database, otherwise,
-            # a separate function adds the default values into the database, this bit adds the data to the cache.
-            if data:
-                self._cache[guild_id][member_id] = {
-                    'id': data.get('id'),
-                    'username': data.get('username'),
-                    'level': data.get('level'),
-                    'exp': data.get('exp'),
-                    'ispaused': data.get('ispaused'),
-                    'boost': data.get('boost'),
-                }
-            else:
-                await self.add_to_db(guild_id, member_id)
-                await self.add_to_cache(guild_id, member_id)  # important
-            return data
+        if data:
+            self._cache[guild_id][member_id] = {
+                'id': data.get('id'),
+                'username': data.get('username'),
+                'level': data.get('level'),
+                'exp': data.get('exp'),
+                'ispaused': data.get('ispaused'),
+                'boost': data.get('boost'),
+            }
+        else:
+            await self.add_to_db(guild_id, member_id)
+            await self.add_to_cache(guild_id, member_id)  # important
+        return data
 
     async def add_to_db(self, guild_id: int, member_id: int) -> None:
         """
@@ -126,11 +115,7 @@ class LevelSystem(commands.Cog):
         :param member_id: The id of the member
         :return: None
         """
-        async with self.bot.pool.acquire() as conn:
-            table_name = "server_members" + str(guild_id)
-            query = f"INSERT INTO {table_name} (id, username, level, exp, ispaused, boost) " \
-                    f"VALUES ($1, $2, $3, $4, $5, $6)"
-            await conn.execute(query, member_id, 'deprecated', 0, 0, False, 1)
+        await self.bot.db.make_member_entry(guild_id, member_id)
 
     async def dump_single_guild(self, guildid: int):
         """
@@ -181,7 +166,7 @@ class LevelSystem(commands.Cog):
                     rank += 1
                 return top10
 
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=QUERY_INTERVAL_MINUTES)
     async def update_level_db(self):
         """
         Loop that dumps the cache into db every 10 minutes
