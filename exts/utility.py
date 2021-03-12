@@ -1,6 +1,6 @@
 import io
 import discord
-from PIL import Image
+import matplotlib
 from discord.ext import commands
 from matplotlib import pyplot as plt
 
@@ -18,7 +18,14 @@ def generate_plot(x, y):
     Returns: output_buffer : an io.BytesIO object that has the png image data.
     """
     fig, ax = plt.subplots(1, 1)
-    ax.plot(x, y)
+    ax.plot(x, y, color='white')
+    fig.patch.set_facecolor('#2f3136')
+    ax.set_facecolor('#2f3136')
+    ax.tick_params(axis='x', colors='white')
+    ax.tick_params(axis='y', colors='white')
+    for child in ax.get_children():
+        if isinstance(child, matplotlib.spines.Spine):
+            child.set_color('white')
     temp = io.BytesIO()
 
     # Save plot into buffer
@@ -105,10 +112,14 @@ class Utility(commands.Cog):
     @commands.command()
     async def plotdata(self, ctx: commands.Context, *, data: str):
         d = data.split(';')
-        x = [int(e) for e in d[0].split(',')]
-        y = [int(e) for e in d[1].split(',')]
-
-        f = await self.bot.loop.run_in_executor(None, generate_plot, x, y)
+        x = [float(e) for e in d[0].split(',')]
+        y = [float(e) for e in d[1].split(',')]
+        try:
+            f = await self.bot.loop.run_in_executor(None, generate_plot, x, y)
+        except ValueError:
+            await ctx.send('Invalid data entered, please check if all values are numeric and there is an equal number '
+                           'of them on both sides of the semicolon.')
+            return
 
         file = discord.File(f, filename='plot.png')
         e = discord.Embed(title='Plot successful!', colour=discord.Colour.green())
