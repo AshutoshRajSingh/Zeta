@@ -8,10 +8,17 @@ from discord.ext import commands
 
 def start(bot: commands.Bot):
     async def connect_to_db():
+        """
+        Creates connection pool to database
+        Returns:None
+
+        """
         bot.pool = await asyncpg.create_pool(os.environ['DATABASE_URL'], max_size=20)
         print(f"Connection to database made at {datetime.datetime.utcnow()}")
 
     bot.loop.run_until_complete(connect_to_db())
+
+    # Assigns DB instance to bot so it's accessible everywhere
     db = util.DB(bot.pool)
     bot.db = db
 
@@ -26,10 +33,16 @@ def start(bot: commands.Bot):
             await db.make_guild_entry(guild.id)
 
     async def change_presence():
+        """
+        Changes the activity to a hardcoded value
+        """
         await bot.wait_until_ready()
         await bot.change_presence(activity=discord.Game("Ping me for usage"))
 
     async def load_prefixes():
+        """
+        Loads server command prefixes from database then assigns them into a botvar bot.prefixes
+        """
         await bot.wait_until_ready()
         async with bot.pool.acquire() as conn:
             async with conn.transaction():
