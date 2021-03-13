@@ -103,7 +103,7 @@ class DB:
         """
         return await self.pool.fetchrow(f"SELECT * FROM guilds WHERE id = $1", guildid)
 
-    async def make_member_entry(self, memberid, guildid):
+    async def make_member_entry(self, guildid, memberid):
         """
         Creates a member row in table with default values
         Args:
