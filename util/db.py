@@ -123,4 +123,15 @@ class DB:
                     f"VALUES ($1, $2, $3, $4, $5, $6)"
             await conn.execute(query, memberid, 'deprecated', 0, 0, False, 1)
 
-
+    async def fetch_guild_selfole_data(self, guildid):
+        data = {}
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                async for entry in conn.cursor('SELECT * FROM selfrole WHERE guildid = $1', guildid):
+                    if data.get(entry.get('messageid')) is None:
+                        data[entry.get('messageid')] = {
+                            entry.get('emoji'): entry.get('roleid')
+                        }
+                    else:
+                        data[entry.get('messageid')][entry.get('emoji')] = entry.get('roleid')
+        return data
