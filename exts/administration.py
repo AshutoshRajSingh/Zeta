@@ -16,6 +16,7 @@ async def create_mute_role(guild: discord.Guild):
 
     return newrole
 
+
 # The database for mutes will be queried every this minutes
 QUERY_INTERVAL_MINUTES = 30
 
@@ -26,7 +27,7 @@ def parsetime(time: str):
     minutes = 0
     for elem in arr:
         if elem.endswith('h'):
-            minutes += int(elem[0:len(elem)-1]) * 60
+            minutes += int(elem[0:len(elem) - 1]) * 60
         elif elem.endswith('m'):
             minutes += int(elem[0:len(elem) - 1])
         elif elem.endswith('d'):
@@ -38,6 +39,7 @@ class Administration(commands.Cog):
     """
     Class that implements administration commands for a guild
     """
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -131,8 +133,9 @@ class Administration(commands.Cog):
                 await target.remove_roles(role)
 
                 # Send a message to the target informing them that they were unmuted
-                e = discord.Embed(description=f"Your mute period has been completed, you will now be able to send messages in "
-                                          f"{guild} again.", colour=discord.Colour.green())
+                e = discord.Embed(
+                    description=f"Your mute period has been completed, you will now be able to send messages in "
+                                f"{guild} again.", colour=discord.Colour.green())
                 await target.send(embed=e)
 
         # Gotta delete the entry from the database now that the unmute has been done
@@ -149,7 +152,6 @@ class Administration(commands.Cog):
                 future = datetime.datetime.utcnow() + datetime.timedelta(minutes=QUERY_INTERVAL_MINUTES)
                 async for entry in conn.cursor("SELECT * FROM mutes WHERE mutedtill < $1",
                                                future):
-
                     # Creating an async task to perform unmutes, the future handling is done in the perform_unmute
                     # function itself
                     self.bot.loop.create_task(self.perform_unmute(entry.get('guildid'),
