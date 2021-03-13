@@ -3,19 +3,18 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import TextChannelConverter
 
-tcc = TextChannelConverter()
-
 
 class ReactionRoles(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self._cache = {}
+        self.tcc = TextChannelConverter()
         self.bot.loop.create_task(self.__ainit__())
 
     async def __ainit__(self):
         await self.bot.wait_until_ready()
         for guild in self.bot.guilds:
-            self._cache[guild.id] = {}
+            self._cache[guild.id] = await self.bot.db.fetch_guild_selfole_data(guild.id)
 
     async def check_payload(self, payload: discord.RawReactionActionEvent):
         """
@@ -29,6 +28,18 @@ class ReactionRoles(commands.Cog):
         """
         guild = self.bot.get_guild(payload.guild_id)
         emoji = payload.emoji
+
+        """
+        Cache implementation:
+        {
+            guild_id: {
+                message_id: {
+                    emoji: roleid
+                    }
+                }
+            }
+        }    
+        """
 
         if guild.id in self._cache:
             if payload.message_id in self._cache[guild.id]:
@@ -77,10 +88,18 @@ class ReactionRoles(commands.Cog):
         await ctx.send('send id of channel to send menu in')
         m = await self.bot.wait_for('message', check=lambda _m: _m.author == ctx.author, timeout=30)
 
-        chan = await tcc.convert(ctx, m.content)
+        chan = await self.tcc.convert(ctx, m.content)
 
-        zero = await chan.send(f'Role menu\n {brake}')
+        outstring = "Role menu\n"
+        for k, v in brake.items():
+            outstring += f'{k} - {ctx.guild.get_role(v)}\n'
+
+        zero = await chan.send(outstring)
         self._cache[ctx.guild.id][zero.id] = brake
+
+        for k, v in brake.items():
+            await self.bot.pool.execute('INSERT INTO selfrole (guildid, roleid, messageid, emoji) VALUES($1, $2, $3, $4)',
+                                        ctx.guild.id, v, zero.id, k)
 
 
 def setup(bot: commands.Bot):
