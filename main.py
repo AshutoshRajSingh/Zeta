@@ -43,6 +43,7 @@ extensions = [
     'utility',
     'genevents',
     'misc',
+    'reactionroles',
     '_jishaku',
 ]
 
