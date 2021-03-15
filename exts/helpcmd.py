@@ -83,7 +83,8 @@ everything = {
         'Retrieves an earlier stored tag',
         'tag tagname',
         'tagname here is the name of the tag you wish to fetch, for example to get a tag named '
-        '\'boop\' you would use `tag boop` '
+        '\'boop\' you would use `tag boop` ',
+        ['create', 'edit', 'delete']
     ],
     'tag create': [
         'Stores text for later retreival',
@@ -115,6 +116,22 @@ everything = {
         'reddit subreddit_name',
         'subreddit_name here is the name of the subreddit from which you wish to get a post\n'
         'Alternate names for this command: `r`'
+    ],
+    'reacrole': [
+        'The base command to configure reaction roles, doesn\'t do anything by itself, you need to use the subcommand '
+        'for each action',
+        'reacrole subcommand',
+        'Nothing here',
+        ['create',]
+    ],
+    'reacrole create': [
+        'Create a reaction roles menu',
+        'reacrole create title role1 role2 role3...',
+        'role1, role2, role3 are the roles you wish to create the menu for, can be any number, you can enter the id of'
+        ' the roles, their name (enclosed in double quotes if it has a space), or their mention\nTitle is the title of'
+        ' the role menu that will show up on the top. The first argument is always title\n'
+        'After you use this command it will guide you through creating the menu, including what reactions correspond'
+        ' to what role and which channel you want to put the role menu in.'
     ]
 }
 
@@ -126,13 +143,13 @@ categoryinfo = {
         'setbd', 'bday', 'bdchannel', 'bdalerttime'
     ],
     "Utility": [
-        'tag', 'tag create', 'tag edit', 'tag delete', 'reddit'
+        'tag', 'reddit'
     ],
     "Moderation": [
         'lockdown', 'unlock', 'mute', 'unmute'
     ],
     "Admin": [
-        'prefix',
+        'prefix', 'reacrole'
     ],
 }
 
@@ -142,27 +159,39 @@ async def help(ctx: commands.Context, *, arg: str = None):
     if not arg:
         title = "Commands"
         text = ""
+        embed = discord.Embed(title=title,
+                              description=f"Use {ctx.prefix}help command for more info on a command\n"
+                                          f"Use {ctx.prefix}help command subcommand for more info on a subcommand\n",
+                              colour=discord.Colour.green())
         for category in categoryinfo:
-            text += f"```{category}```\n"
             for command in categoryinfo[category]:
-                text += f"**{command}**\n{everything[command][0]}\n\n"
+                text += f"`{command}`, "
+            embed.add_field(name=category, value=text[:len(text)-2], inline=True)
+            text = ""
     else:
         data = everything.get(arg)
         if not data:
             await ctx.send(f"Couldn't find the command that you were looking for, please use `{ctx.prefix}help` to get"
                            f" a list of usable commands")
             return
+
         title = f"Command: {arg}"
         text = f"""
 **{data[0]}**
 
 Usage:
 ```{ctx.prefix}{data[1]}```
-{data[2]}        
+{data[2]}       
 """
-    embed = discord.Embed(title=title,
-                          description=text,
-                          colour=discord.Colour.green())
+
+        embed = discord.Embed(title=title,
+                              description=text,
+                              colour=discord.Colour.green())
+        if len(data) == 4:
+            embed.description += "\n**Subcommands:**\n"
+            for elem in data[3]:
+                embed.add_field(name=elem, value=everything[f"{arg} {elem}"][0])
+
     await ctx.send(embed=embed)
 
 
