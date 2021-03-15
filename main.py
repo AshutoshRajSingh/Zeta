@@ -12,10 +12,10 @@ print(f"All dates/time are in UTC unless stated otherwise\n"
 intents = discord.Intents.all()
 
 
-async def get_pre(bott: commands.Bot, message: discord.Message):
+async def get_pre(_bot: commands.Bot, message: discord.Message):
     if message.guild is None:
         return '.'
-    prefix = bott.prefixes.get(message.guild.id)
+    prefix = _bot.prefixes.get(message.guild.id)
     if prefix:
         return prefix
     else:
