@@ -34,9 +34,10 @@ util.startup.start(bot)
 
 # Extensions inside exts dir named as is, extensions that are a site-package prefixed with '_' here currently jishaku
 extensions = [
-    'administration',
+    'moderation',
+    'fun',
     'commanderrorhandler',
-    'funcmds',
+    'birthdaysystem',
     'guildconfig',
     'helpcmd',
     'levelsystem',

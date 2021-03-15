@@ -1,12 +1,12 @@
-import time
-import random
-import aiohttp
 import discord
 import datetime
 from discord.ext import commands, tasks
 
 
-class FunCmds(commands.Cog):
+class BirthdaySystem(commands.Cog, name="Birthday system"):
+    """
+    Commands related to birthdays and the like, saving, retrieving, and automatic alerts.
+    """
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.bday_poll.start()
@@ -14,12 +14,9 @@ class FunCmds(commands.Cog):
     @commands.command()
     async def bday(self, ctx: commands.Context, target: discord.Member) -> None:
         """
-        Fetches a member's birthday from the database, they need to have registered their birthday in that particular
-        guild for it to work.
-
-        :param ctx: invocation context
-        :param target: Target whose birthday to fetch
-        :return:
+        Sends a member's birthday as a message
+        `target` here is the member whose birthday you wish to see, not that they need to have their birthday saved
+        in this server using the setbd command
         """
         async with self.bot.pool.acquire() as conn:
             async with conn.transaction():
@@ -48,19 +45,17 @@ class FunCmds(commands.Cog):
         await ctx.send(f"{target}'s birthday is on {birthday}")
 
     @commands.command()
-    async def setbd(self, ctx: commands.Context, *, birthday: str):
+    async def setbd(self, ctx: commands.Context, *, date_of_birth: str):
         """
-        Saves the birthday of a member into that guild's table.
-        Format: DD MM YYYY
-
-        :param ctx: Invocation context
-        :param birthday: (str) The birthday to save into the database
-        :return: None
+        Command to save your birthday in the bot
+        If you choose to do this, everyone **in this server** will be able to see your birthday and will get
+        notified when the day arrives.
+        The only acceptable format for your date of birth is "DD MM YYYY"
         """
 
         # Try except block to check if the date entered was of correct format
         try:
-            datecheck = datetime.datetime.strptime(birthday, "%d %m %Y")
+            datecheck = datetime.datetime.strptime(date_of_birth, "%d %m %Y")
         except ValueError:
             # Error message sent when date format isn't the one bot is looking for
             await ctx.send("Invalid date format, please try again, using `DD MM YYYY`")
@@ -70,7 +65,7 @@ class FunCmds(commands.Cog):
         # Yeet it into dabatase
         table_name = f"server_members{ctx.guild.id}"
         query = f"UPDATE {table_name}" + " SET birthday=to_date($1, 'DD MM YYYY') WHERE id =  $2"
-        await self.bot.pool.execute(query, birthday, ctx.author.id)
+        await self.bot.pool.execute(query, date_of_birth, ctx.author.id)
 
         # Send confirmation message stating that the birthday was recorded successfully
         embed = discord.Embed(title="Birthday recorded!",
@@ -153,7 +148,9 @@ class FunCmds(commands.Cog):
     @commands.has_guild_permissions(manage_guild=True)
     async def bdalerttime(self, ctx: commands.Context, *, time):
         """
-        Sets the time of the day at which birthday alerts will be sent on a guild. (UTC)
+        Sets the time of the day at which birthday alerts will be sent on a guild
+        The time provided must be in UTC and of the format "HH MM"
+        Note that you need to have the "Manage server" permisission to use this commane
         """
         tim = datetime.datetime.strptime(time, "%H %M").time()
         await self.bot.pool.execute("UPDATE guilds SET bdayalerttime = $1 WHERE id = $2", tim, ctx.guild.id)
@@ -164,65 +161,26 @@ class FunCmds(commands.Cog):
         await ctx.send(embed=e)
         await self.bday_poll()
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.check(lambda ctx: ctx.author.id == 501451372147769355)
     async def checkbd(self, ctx: commands.Context):
         await self.bday_poll()
 
-    @commands.command(aliases=['r'])
-    async def reddit(self, ctx: commands.Context, subreddit: str):
-        BASE = 'https://reddit.com'
-        ROUTE = BASE + '/r/%s.json'
+    @commands.command()
+    @commands.has_guild_permissions(administrator=True)
+    async def bdchannel(self, ctx: commands.Context, alert_channel: discord.TextChannel):
+        """
+        Sets the channel in which the automatic birthday alerts will be sent
+        Note that you need to have the "Manage server" permission to use this command
+        """
 
-        start = time.time()
-
-        async with aiohttp.ClientSession() as cs:
-            async with cs.get(ROUTE % subreddit) as r:
-                d = await r.json()
-
-        # Count the number of nsfw/video posts in the subreddit as they don't go to discord
-        nsfw = 1
-        video = 1
-
-        # Max number of posts to look up
-        MAX_LOOKUPS = 25
-
-        # The reddit json api doesn't (seem to) return a 404 if subreddit doesn't exist, this seems like a workaround
-        # To check if the sub doesn't exist/is private
-        if len(d['data']['children']) == 0:
-            await ctx.send("Subreddit not found! It may be private or might not exist.")
-            return
-        # There was an attempt to ignore video/nsfw posts however for the video part, if the sub is a video only sub
-        # bad things happen and I really am not in the mood to investigate what's wrong (apparently the is_video bool
-        # is incorrect for some posts)
-        else:
-            posts = d['data']['children']
-            while nsfw < MAX_LOOKUPS and video < MAX_LOOKUPS:
-                selected = random.choice(posts)
-                if selected['data']['over_18']:
-                    nsfw += 1
-                    continue
-                if selected['data']['is_video']:
-                    video += 1
-                    continue
-
-                e = discord.Embed(title=selected['data']['title'],
-                                  url=BASE+selected['data']['permalink'],
-                                  colour=discord.Colour.red())
-                e.set_image(url=selected['data']['url_overridden_by_dest'])
-
-                duration = time.time()-start
-                e.set_footer(text=f'Requested by {ctx.author}, fetched in %.2gs' % duration,
-                             icon_url=ctx.author.avatar_url)
-
-                await ctx.send(embed=e)
-                return
-
-            if nsfw >= MAX_LOOKUPS:
-                await ctx.send(f"Looked up {MAX_LOOKUPS} posts, all were nsfw, not posting")
-            elif video >= MAX_LOOKUPS:
-                await ctx.send(f"Looked up {MAX_LOOKUPS} posts, all were videos, can't post.")
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("UPDATE guilds SET bdayalert = $1 WHERE id = $2", alert_channel.id, ctx.guild.id)
+            e = discord.Embed(title='Success!',
+                              description=f'The channel {alert_channel.mention} will be used for auto birthday alerts',
+                              colour=discord.Colour.green())
+            await ctx.send(embed=e)
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(FunCmds(bot))
+    bot.add_cog(BirthdaySystem(bot))

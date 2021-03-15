@@ -13,21 +13,15 @@ def is_me(ctx):
 QUERY_INTERVAL_MINUTES = 10
 
 
-class LevelSystem(commands.Cog):
+class LevelSystem(commands.Cog, name="Levelling"):
     """
-    A Cog that implements a level system for messaging on multiple discord servers.\n
-    Attributes:
-        bot : the bot instance
-        _cache: protected cache attribute for rapid short term storage of the data, dumped into db every 10 minutes
-    Functions:
-        await give_exp(guild_id, member_id, amount=None) : give exp to a member\n
-
-        await add_to_cache(guild_id, member_id) : add a member to cache\n
-
-        await add_to_db(guild_id, member_id) : adds a member to the database of the respective server\n
+    This group contains all the commands relevant to the on message exp and level system, as you send messages, you
+    receive exp points which translate to different levels.
     """
+    qualified_name = "Levelling"
 
     def __init__(self, bot):
+        super().__init__()
         self.bot = bot
 
         # Look up implementation inside the add_to_cache function docstring
@@ -217,8 +211,9 @@ class LevelSystem(commands.Cog):
     @commands.command()
     async def level(self, ctx: commands.Context, target: discord.Member = None):
         """
-        Displays the level and exp points of a target specified
-        If no target specified, shows own level
+        Used to show own or someone else's level
+        `target` here is the member whose level you wish to know (can be mention, id or username), if no target
+        specified, own level is shown"
         """
         if not target:
             target = ctx.author
@@ -238,7 +233,7 @@ class LevelSystem(commands.Cog):
     @commands.command()
     async def lb(self, ctx):
         """
-        Shows the top 10 server members based off their exp
+        Shows the top 10 server members based off their exp.
         """
         data = await self.fetch_top_n(ctx.guild, limit=10)
 
@@ -254,12 +249,11 @@ class LevelSystem(commands.Cog):
     @commands.has_guild_permissions(manage_messages=True)
     async def setmultiplier(self, ctx: commands.Context, target: discord.Member, multiplier: int):
         """
-        Command to set the multiplier of a member, setting it to 0 will make it so they don't get any level, eliminating
-        the need of having an "ispaused" field in the database which will be removed soon.\n
-        :param ctx:
-        :param target:
-        :param multiplier:
-        :return:
+        Used to set exp multiplier of a member
+        Note that you need to have the server permisson "Manage messages" in order to use this command
+
+        `target` here is the member whose multiplier you wish to set, can be mention, id or username
+        `multiplier` here is the exp multiplier you want to set, a value of 2 will indicate twice as fast levelling
         """
         if target.id not in self._cache[ctx.guild.id]:
             await self.add_to_cache(ctx.guild.id, target.id)
@@ -269,13 +263,20 @@ class LevelSystem(commands.Cog):
     @commands.command()
     @commands.has_guild_permissions(manage_messages=True)
     async def giveexp(self, ctx: commands.Context, target: discord.Member, amount: int):
+        """
+        Used to award a certain amount of exp to a member
+        Note that you need to have the server permission "manage_messages" to use this command
+
+        `target` here is the member who you wish to give exp points to
+        `amount` is the number of exp points you wish to award that member
+        """
         await self.give_exp(ctx.guild.id, target.id, amount=int(amount))
         e = discord.Embed(title="Success",
                           description=f"Added {amount} points to {target.mention}",
                           colour=discord.Colour.green())
         await ctx.send(embed=e)
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.check(is_me)
     async def update_db(self, ctx):
         """

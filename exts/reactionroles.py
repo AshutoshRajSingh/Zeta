@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord.ext.commands import TextChannelConverter
 
 
-class ReactionRoles(commands.Cog):
+class ReactionRoles(commands.Cog, name="Reaction roles"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self._cache = {}
@@ -74,11 +74,23 @@ class ReactionRoles(commands.Cog):
 
     @commands.group()
     async def reacrole(self, ctx: commands.Context):
+        """
+        Base command for all the reaction role functionality, doesn't do anything by itself but has subcommands
+        that aid in managing reaction roles
+        """
         pass
 
     @reacrole.command()
     @commands.has_guild_permissions(manage_roles=True)
     async def create(self, ctx: commands.Context, title: str, *roles: discord.Role):
+        """
+        Create a reaction roles menu
+        title is the title of the role menu that will show up on the top. The first argument is always the title
+        `roles` is a space-separated list of roles you wish to create the menu for, can be any number, you can enter the id of
+        the roles, their name (enclosed in double quotes if it has a space), or their mention.
+        After you use this command it will guide you through creating the menu, including what reactions correspond
+        to what role and which channel you want to put the role menu in.
+        """
         brake = {}
 
         def check(_r, _u):

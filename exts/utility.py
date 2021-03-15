@@ -35,7 +35,7 @@ def generate_plot(x, y):
     return temp
 
 
-class Utility(commands.Cog):
+class Utility(commands.Cog, name="Utility"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -45,6 +45,11 @@ class Utility(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def tag(self, ctx: commands.Context, *, tagname):
+        """
+        Fetches a previously stored tag by name
+        This is the base command for tag functionality, a tag is a piece of text you store under a name for later
+        retrieval.
+        """
         # Fetches a tag stored in db.
         query = "SELECT content FROM tags WHERE name = $1 AND guildid = $2"
         data = await self.bot.pool.fetchrow(query, tagname, ctx.guild.id)
@@ -57,7 +62,12 @@ class Utility(commands.Cog):
 
     @tag.command()
     async def create(self, ctx: commands.Context, tagname, *, content):
-
+        """
+        Stores text for later retreival
+        `tagname` here is the name you wish the new tag to have, `content` here is the text you wish to store, for example to
+        store the text "spaghetti" under the tagname "pasta"
+         you would use `tag create pasta spaghetti`
+        """
         # Need to make sure that tag we're about to create doesn't already exist
         checkquery = "SELECT exists(SELECT content FROM tags WHERE name = $1 AND guildid = $2)"
         data = await self.bot.pool.fetchrow(checkquery, tagname, ctx.guild.id)
@@ -72,6 +82,10 @@ class Utility(commands.Cog):
 
     @tag.command()
     async def edit(self, ctx: commands.Context, tagname, *, content):
+        """
+        Edits a tag owned by you
+        `tagname` is the name of the tag you wish to edit, newcontent is the text you wish to replace it with, note that you can only edit tags you own
+        """
         query = "UPDATE tags SET content = $1 WHERE name = $2 AND guildid = $3 AND authorid = $4"
 
         # execute() returns postgres return code, we expect it to be "UPDATE 1" if tag edit was done successfully
@@ -86,7 +100,11 @@ class Utility(commands.Cog):
 
     @tag.command()
     async def delete(self, ctx: commands.Context, tagname):
+        """
+        Deletes a tag already created by someone
 
+        tagname here is the name of the tag you wish to delete, if you own it, you can delete it straightforwardly, if you don't, you will need the server permission 'manage messages' in order to delete it."
+        """
         # If user has manage_messages permission, delete straignt away
 
         if ctx.author.guild_permissions.manage_messages:
@@ -111,6 +129,13 @@ class Utility(commands.Cog):
 
     @commands.command()
     async def plotdata(self, ctx: commands.Context, *, data: str):
+        """
+        Sends a line plot of a given sets of points in x and y
+
+        `data` here is the data you wish to plot, the format is given by the example:
+        `1,2,3;4,5,6`
+        the part on the left of semicolon represents the x values (comma separated) and the part on the right of the semicolon represents the y values, therefore this example would lead to the plotting of the points (1,4),(2,5),(3,6)
+        """
         d = data.split(';')
         x = [float(e) for e in d[0].split(',')]
         y = [float(e) for e in d[1].split(',')]

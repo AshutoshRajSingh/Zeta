@@ -9,6 +9,9 @@ start = datetime.datetime.utcnow()
 
 
 class Misc(commands.Cog):
+    """
+    Miscellaneous commands that don't quite fit any other category
+    """
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -22,6 +25,9 @@ class Misc(commands.Cog):
 
     @commands.command()
     async def info(self, ctx: commands.Context):
+        """
+        Sends info about the bot, you gotta use it to see.
+        """
         e = discord.Embed(title=f"{self.bot.user.name}",
                           description=f"A big dumdum discord bot made by {self.bot.get_user(501451372147769355)}",
                           colour=discord.Colour.blue())

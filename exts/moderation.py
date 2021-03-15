@@ -35,16 +35,14 @@ def parsetime(time: str):
     return minutes
 
 
-class Administration(commands.Cog):
+class Moderation(commands.Cog):
     """
-    Class that implements administration commands for a guild
+    Commands to deal with pesky trolls and spammers, all of them at one place
     """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
         self._cache = {}
-
         self.mute_poll.start()
 
     async def load_cache(self):
@@ -56,15 +54,24 @@ class Administration(commands.Cog):
     # ------------------------------------Moderative actions--------------------------------------------
 
     @commands.command()
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_messages=True)
     async def lockdown(self, ctx: commands.Context):
+        """
+        Removes the permissions "send_messages" and "add_reactions" from `@everyone`
+        Note that you need to have the server permission "manage messages" to use this command
+        """
         await ctx.guild.default_role.edit(permissions=discord.Permissions(send_messages=False, add_reactions=False))
         await ctx.send(
             embed=discord.Embed(title="A server-wide lockdown is now in effect", colour=discord.Colour.red()))
 
     @commands.command()
-    @commands.has_guild_permissions(administrator=True)
+    @commands.has_guild_permissions(manage_messages=True)
     async def unlock(self, ctx: commands.Context):
+        """
+        Enables the permissions "send_messages" and "add_reactions" on `@everyone`
+        Basically reverses what the lockdown command does
+        Note that you need to have the server permission "manage messages" to use this command
+        """
         await ctx.guild.default_role.edit(permissions=discord.Permissions.general())
         await ctx.send(
             embed=discord.Embed(title="Lockdown lifted", colour=discord.Colour.green()))
@@ -72,6 +79,11 @@ class Administration(commands.Cog):
     @commands.command()
     @commands.has_guild_permissions(manage_messages=True)
     async def mute(self, ctx, target: discord.Member, *, time: str = None):
+        """
+        Mutes a member preventing them from sending messages/adding reactions in the server"
+        `target` here is the member you'd like to mute, time (optional) is the time you wish to mute them for, the only acceptable format for time is shown by the example: `1d 2h 4m` Therefore setting the time to `1d 2h 4m` would mute your target for 1 day, 2 hours and 4 minutes
+        Note that you need to have the server permission "manage messages" to use this command
+        """
         mr = get(ctx.guild.roles, name="Muted")
         if not mr:
             await ctx.send("Server doesn't seem to have mute configured yet, stand by please.")
@@ -109,6 +121,11 @@ class Administration(commands.Cog):
     @commands.command()
     @commands.has_guild_permissions(manage_messages=True)
     async def unmute(self, ctx: commands.Context, target: discord.Member):
+        """
+        Unmutes an already muted member, allowing them to send messages/add reactions
+        target here is the member you wish to unmute, note that unmuting a member with a timed mute will end their mute period at that instant
+        Note that you need to have the server permission "manage messages" to use this command
+        """
         await self.perform_unmute(ctx.guild.id, target.id, datetime.datetime.utcnow())
         await ctx.send(embed=discord.Embed(description=f"Unmuted {target.mention}", colour=discord.Colour.green()))
 
@@ -160,4 +177,4 @@ class Administration(commands.Cog):
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(Administration(bot))
+    bot.add_cog(Moderation(bot))
