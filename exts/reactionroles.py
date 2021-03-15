@@ -75,8 +75,7 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
     @commands.group()
     async def reacrole(self, ctx: commands.Context):
         """
-        Base command for all the reaction role functionality, doesn't do anything by itself but has subcommands
-        that aid in managing reaction roles
+        Base command for all the reaction role functionality, doesn't do anything by itself but has subcommands that aid in managing reaction roles
         """
         pass
 
@@ -85,11 +84,11 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
     async def create(self, ctx: commands.Context, title: str, *roles: discord.Role):
         """
         Create a reaction roles menu
-        title is the title of the role menu that will show up on the top. The first argument is always the title
-        `roles` is a space-separated list of roles you wish to create the menu for, can be any number, you can enter the id of
-        the roles, their name (enclosed in double quotes if it has a space), or their mention.
-        After you use this command it will guide you through creating the menu, including what reactions correspond
-        to what role and which channel you want to put the role menu in.
+        `title` is the title of the role menu that will show up on the top. The first argument is always the title (Needs to be enclosed in double quotes if it has a space).
+
+        `[roles...]` is a space-separated list of roles you wish to create the menu for, you can enter the id of the roles, their name (enclosed in double quotes if it has a space), or their mention.
+
+        After you use this command it will guide you through creating the menu, including what reactions correspond to what role and which channel you want to put the role menu in.
         """
         brake = {}
 
