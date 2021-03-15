@@ -47,8 +47,8 @@ class Utility(commands.Cog, name="Utility"):
     async def tag(self, ctx: commands.Context, *, tagname):
         """
         Fetches a previously stored tag by name
-        This is the base command for tag functionality, a tag is a piece of text you store under a name for later
-        retrieval.
+
+        This is the base command for tag functionality, a tag is a piece of text you store under a name for later retrieval.
         """
         # Fetches a tag stored in db.
         query = "SELECT content FROM tags WHERE name = $1 AND guildid = $2"
@@ -64,9 +64,8 @@ class Utility(commands.Cog, name="Utility"):
     async def create(self, ctx: commands.Context, tagname, *, content):
         """
         Stores text for later retreival
-        `tagname` here is the name you wish the new tag to have, `content` here is the text you wish to store, for example to
-        store the text "spaghetti" under the tagname "pasta"
-         you would use `tag create pasta spaghetti`
+
+        `tagname` here is the name you wish the new tag to have, `content` here is the text you wish to store, for example to store the text "spaghetti" under the tagname "pasta" you would use `tag create pasta spaghetti`
         """
         # Need to make sure that tag we're about to create doesn't already exist
         checkquery = "SELECT exists(SELECT content FROM tags WHERE name = $1 AND guildid = $2)"
@@ -84,6 +83,7 @@ class Utility(commands.Cog, name="Utility"):
     async def edit(self, ctx: commands.Context, tagname, *, content):
         """
         Edits a tag owned by you
+
         `tagname` is the name of the tag you wish to edit, newcontent is the text you wish to replace it with, note that you can only edit tags you own
         """
         query = "UPDATE tags SET content = $1 WHERE name = $2 AND guildid = $3 AND authorid = $4"
