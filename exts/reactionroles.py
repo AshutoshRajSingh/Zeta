@@ -60,7 +60,12 @@ class ReactionRoles(commands.Cog):
             member = guild.get_member(payload.user_id)
             await member.add_roles(role)
 
-        role = await self.check_payload(payload)
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        """
+        Does the same thing as the one above it excepts removes a role from the user who unreacted from message
+        """
+        role: discord.Role = await self.check_payload(payload)
 
         if role:
             guild = self.bot.get_guild(payload.guild_id)
