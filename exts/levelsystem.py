@@ -212,8 +212,7 @@ class LevelSystem(commands.Cog, name="Levelling"):
     async def level(self, ctx: commands.Context, target: discord.Member = None):
         """
         Used to show own or someone else's level
-        `target` here is the member whose level you wish to know (can be mention, id or username), if no target
-        specified, own level is shown"
+        `target` here is the member whose level you wish to know (can be mention, id or username), if no target specified, own level is shown.
         """
         if not target:
             target = ctx.author
@@ -281,9 +280,7 @@ class LevelSystem(commands.Cog, name="Levelling"):
     async def update_db(self, ctx):
         """
         Command to update the database manually, mostly used for testing purposes, or when planning to take bot down
-        for maintenance 
-        :param ctx:
-        :return:
+        for maintenance
         """
         await self.update_level_db()
         await ctx.send("db updated (hopefully)")
