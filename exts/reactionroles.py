@@ -53,53 +53,88 @@ class ReactionRoles(commands.Cog):
         Cog maintains an internal cache containing information about what reaction from what message from w
         hat guild corresponds to what role to be assigned
         """
-        guild = self.bot.get_guild(payload.guild_id)
-        member = guild.get_member(payload.user_id)
+        role: discord.Role = await self.check_payload(payload)
+
+        if role:
+            guild = self.bot.get_guild(payload.guild_id)
+            member = guild.get_member(payload.user_id)
+            await member.add_roles(role)
 
         role = await self.check_payload(payload)
 
         if role:
-            await member.add_roles(role)
-        else:
-            pass
+            guild = self.bot.get_guild(payload.guild_id)
+            member: discord.Member = guild.get_member(payload.user_id)
+            await member.remove_roles(role)
 
     @commands.group()
     async def reacrole(self, ctx: commands.Context):
         pass
 
     @reacrole.command()
-    async def create(self, ctx: commands.Context, *roles: discord.Role):
+    @commands.has_guild_permissions(manage_roles=True)
+    async def create(self, ctx: commands.Context, title: str, *roles: discord.Role):
         brake = {}
 
         def check(_r, _u):
             return _u == ctx.author and _r.message == me
 
-        me = await ctx.send(f'React with the reaction that will correspond to the role {roles[0]}')
+        me = await ctx.send(f'React with the reaction that will correspond to the role `{roles[0]}`')
 
+        # Yes I know this is an ugly solution to avoid an unnecessary api request but it it ultimately the only solution
+        # I could think of.
         try:
-            for role in roles:
-                await me.edit(content=f'React with the reaction that will correspond to the role {role}')
-                r, u = await self.bot.wait_for('reaction_add', timeout=len(roles)*20, check=check)
-                brake[str(r.emoji)] = role.id
+            r, u = await self.bot.wait_for('reaction_add', timeout=len(roles) * 20, check=check)
+            brake[str(r.emoji)] = roles[0].id
         except asyncio.TimeoutError:
-            await ctx.send('timed out')
+            await ctx.send("Timed out, please run the command again and this time be a little quicker to react.")
             return
 
-        await ctx.send('send id of channel to send menu in')
-        m = await self.bot.wait_for('message', check=lambda _m: _m.author == ctx.author, timeout=30)
+        try:
+            for role in roles[1:]:
+                await me.edit(content=f'React with the reaction that will correspond to the role `{role}`')
+                r, u = await self.bot.wait_for('reaction_add', timeout=len(roles) * 20, check=check)
+                brake[str(r.emoji)] = role.id
+        except asyncio.TimeoutError:
+            await ctx.send('Timed out, please run the command again and this time be a little quicker to react.')
+            return
 
-        chan = await self.tcc.convert(ctx, m.content)
+        await ctx.send(
+            'What channel do you wish to send this role menu in? Enter its id, name or mention it: #<channel>')
 
-        outstring = "Role menu\n"
+        for count in range(4):
+            try:
+                m = await self.bot.wait_for('message', check=lambda _m: _m.author == ctx.author, timeout=30)
+                chan = await self.tcc.convert(ctx, m.content)
+                break
+            except commands.BadArgument:
+                if count == 3:
+                    await ctx.send("Too many tries to enter channel, make sure I can actually see the channel you're "
+                                   "referring to and use the entire command again")
+                    return
+                await ctx.send("Please enter the correct channel, if in doubt, try mentioning it, the `#channel` thing")
+            except asyncio.TimeoutError:
+                await ctx.send("Timed out")
+                return
+        outstring = ""
         for k, v in brake.items():
-            outstring += f'{k} - {ctx.guild.get_role(v)}\n'
+            outstring += f'{k} - {ctx.guild.get_role(v)}\n\n'
 
-        zero = await chan.send(outstring)
+        e = discord.Embed(title=f"Role menu: {title}",
+                          description=outstring,
+                          colour=discord.Colour.blue())
+
+        zero = await chan.send(embed=e)
+
+        for k in brake:
+            await zero.add_reaction(k)
+
         self._cache[ctx.guild.id][zero.id] = brake
 
         for k, v in brake.items():
-            await self.bot.pool.execute('INSERT INTO selfrole (guildid, roleid, messageid, emoji) VALUES($1, $2, $3, $4)',
-                                        ctx.guild.id, v, zero.id, k)
+            await self.bot.pool.execute(
+                'INSERT INTO selfrole (guildid, roleid, messageid, emoji) VALUES($1, $2, $3, $4)',
+                ctx.guild.id, v, zero.id, k)
 
 
 def setup(bot: commands.Bot):
