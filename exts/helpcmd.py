@@ -30,8 +30,8 @@ class MyHelp(commands.MinimalHelpCommand):
         await channel.send(embed=embed)
 
     async def send_command_help(self, command):
-        embed = discord.Embed(title="Command: "+command.qualified_name,
-                              description=f"Usage:```{self.get_command_signature(command)}```\n"+command.help,
+        embed = discord.Embed(title="Command: " + command.qualified_name,
+                              description=f"Usage:```{self.get_command_signature(command)}```\n" + command.help,
                               colour=discord.Colour.purple())
         alias = command.aliases
         if alias:
@@ -43,7 +43,7 @@ class MyHelp(commands.MinimalHelpCommand):
     async def send_cog_help(self, cog):
 
         cmds = cog.get_commands()
-        desc = "\n\n".join([f"{cmd.name} - {cmd.help.splitlines()[0]}" for cmd in cmds])
+        desc = "\n\n".join([f"{cmd.name} - {cmd.help.splitlines()[0]}" for cmd in cmds if cmd.hidden is False])
         e = discord.Embed(title=f"{cog.qualified_name}",
                           description=cog.description + "\n\n" + desc,
                           colour=discord.Colour.purple())
@@ -51,10 +51,12 @@ class MyHelp(commands.MinimalHelpCommand):
         await chan.send(embed=e)
 
     async def send_group_help(self, group):
-        subcmds = "\n".join([f"{self.clean_prefix}{group.qualified_name} {cmd.name} - {cmd.help.splitlines()[0]}" for cmd in group.commands])
-        desc = f"Usage: ```{self.clean_prefix}{group.qualified_name} {group.signature}``` \n {group.help}\n\n Use {self.clean_prefix}help [command] for more info on a command.\nYou can also use {self.clean_prefix}help [category] for more info on a category.\n\n"+"**Commands:**"
-        e = discord.Embed(title=f"{group.qualified_name}",
-                          description=desc+"\n"+subcmds,
+        subcmds = "\n".join(
+            [f"{self.clean_prefix}{group.qualified_name} {cmd.name} - {cmd.help.splitlines()[0]}" for cmd in
+             group.commands])
+        desc = f"Usage: ```{self.clean_prefix}{group.qualified_name} {group.signature}``` \n {group.help}\n\n Use {self.clean_prefix}help [command] for more info on a command.\nYou can also use {self.clean_prefix}help [category] for more info on a category.\n\n" + "**Commands:**"
+        e = discord.Embed(title=f"Command: {group.qualified_name}",
+                          description=desc + "\n" + subcmds,
                           colour=discord.Colour.purple())
         chan = self.get_destination()
         await chan.send(embed=e)
