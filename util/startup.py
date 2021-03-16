@@ -32,6 +32,7 @@ def start(bot: commands.Bot):
         for guild in bot.guilds:
             await db.create_member_table(guild=guild)
             await db.make_guild_entry(guild.id)
+            await db.make_guild_prefs_entry(guild.id)
 
     async def change_presence():
         """
@@ -49,7 +50,18 @@ def start(bot: commands.Bot):
             async with conn.transaction():
                 async for entry in conn.cursor("SELECT id, prefix FROM guilds"):
                     bot.prefixes[entry.get('id')] = entry['prefix']
+
+    async def load_guild_prefs():
+        async with bot.pool.acquire() as conn:
+            async with conn.transaction():
+                async for entry in conn.cursor('SELECT * FROM preferences'):
+                    bot.guild_prefs[entry.get('guildid')] = {
+                        'levelling': entry.get('levelling'),
+                        'birthdays': entry.get('birthdays')
+                    }
+
     bot.cs = aiohttp.ClientSession()
     bot.loop.create_task(load_prefixes())
     bot.loop.create_task(check_tables())
     bot.loop.create_task(change_presence())
+    bot.loop.create_task(load_guild_prefs())
