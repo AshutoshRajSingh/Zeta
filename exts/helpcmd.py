@@ -14,8 +14,13 @@ class MyHelp(commands.MinimalHelpCommand):
         embed = discord.Embed(title="Commands",
                               description=f"Use {self.clean_prefix}help [command] for more info on a command.\nYou can also use {self.clean_prefix}help [category] for more info on a category.",
                               colour=discord.Colour.purple())
-        for cog, commands in mapping.items():
-            filtered = await self.filter_commands(commands, sort=True)
+        for cog, _commands in mapping.items():
+            try:
+                if cog.qualified_name == 'Jishaku':
+                    continue
+            except AttributeError:
+                pass
+            filtered = await self.filter_commands(_commands, sort=True)
             command_signatures = [self._get_command_signature(c) for c in filtered]
             if command_signatures:
                 cog_name = getattr(cog, "qualified_name", "Other")
