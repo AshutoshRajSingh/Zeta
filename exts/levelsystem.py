@@ -17,7 +17,6 @@ class LevelSystem(commands.Cog, name="Levelling"):
     """
     Commands related to levelling, as you send messages, you receive exp points which translate to different levels.
     """
-    qualified_name = "Levelling"
 
     def __init__(self, bot):
         super().__init__()
@@ -29,6 +28,18 @@ class LevelSystem(commands.Cog, name="Levelling"):
 
         # Start the loop that dumps cache to database every 10 minutes
         self.update_level_db.start()
+
+    async def cog_check(self, ctx: commands.Context):
+        try:
+            return self.bot.guild_prefs[ctx.guild.id]['levelling']
+        except KeyError:
+            return False
+
+    async def cog_command_error(self, ctx, error):
+        if isinstance(error, commands.CheckFailure):
+            if not self.bot.guild_prefs[ctx.guild.id].get('levelling'):
+                await ctx.send("The `levelling` plugin has been disabled on this server therefore related commands will not work\n"
+                               "Hint: Server admins can enable it using the `plugin enable` command, use the help command to learn more.")
 
     async def load_cache(self):
         for guild in self.bot.guilds:
@@ -186,6 +197,11 @@ class LevelSystem(commands.Cog, name="Levelling"):
         :param message: the discord.Message object
         :return: None
         """
+        try:
+            if not self.bot.guild_prefs[message.guild.id].get('levelling'):
+                return
+        except KeyError:
+            return
 
         # Bots shouldn't be levelling up
         if not message.author.bot:

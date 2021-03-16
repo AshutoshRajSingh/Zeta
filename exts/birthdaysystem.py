@@ -11,6 +11,18 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
         self.bot = bot
         self.bday_poll.start()
 
+    async def cog_check(self, ctx: commands.Context):
+        try:
+            return self.bot.guild_prefs[ctx.guild.id]['birthdays']
+        except KeyError:
+            return False
+
+    async def cog_command_error(self, ctx, error):
+        if isinstance(error, commands.CheckFailure):
+            if not self.bot.guild_prefs[ctx.guild.id].get('birthdays'):
+                await ctx.send("The `birthdays` plugin has been disabled on this server therefore related commands will not work\n"
+                               "Hint: Server admins can enable it using the `plugin enable` command, use the help command to learn more.")
+
     @commands.command()
     async def bday(self, ctx: commands.Context, target: discord.Member) -> None:
         """
@@ -99,9 +111,12 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
 
     @tasks.loop(minutes=20)
     async def bday_poll(self):
-
         for guild in self.bot.guilds:
-
+            try:
+                if not self.bot.guild_prefs[guild.id]['birthdaysystem']:
+                    continue
+            except KeyError:
+                continue
             if type(guild.id) is not int:
                 raise TypeError("Somehow guild id is not an int")
 
