@@ -15,8 +15,8 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
     async def bday(self, ctx: commands.Context, target: discord.Member) -> None:
         """
         Sends a member's birthday as a message
-        `target` here is the member whose birthday you wish to see, not that they need to have their birthday saved
-        in this server using the setbd command
+
+        `target` here is the member whose birthday you wish to see, not that they need to have their birthday saved in this server using the setbd command
         """
         async with self.bot.pool.acquire() as conn:
             async with conn.transaction():
@@ -48,8 +48,8 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
     async def setbd(self, ctx: commands.Context, *, date_of_birth: str):
         """
         Command to save your birthday in the bot
-        If you choose to do this, everyone **in this server** will be able to see your birthday and will get
-        notified when the day arrives.
+
+        If you choose to do this, everyone **in this server** will be able to see your birthday and will get notified when the day arrives.
         The only acceptable format for your date of birth is "DD MM YYYY"
         """
 
@@ -148,9 +148,10 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
     @commands.has_guild_permissions(manage_guild=True)
     async def bdalerttime(self, ctx: commands.Context, *, time):
         """
-        Sets the time of the day at which birthday alerts will be sent on a guild
+        Sets the time of auto birthday alerts.
+
         The time provided must be in UTC and of the format "HH MM"
-        Note that you need to have the "Manage server" permisission to use this commane
+        Note that you need to have the "Manage server" permisission to use this command
         """
         tim = datetime.datetime.strptime(time, "%H %M").time()
         await self.bot.pool.execute("UPDATE guilds SET bdayalerttime = $1 WHERE id = $2", tim, ctx.guild.id)
@@ -170,8 +171,9 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
     @commands.has_guild_permissions(administrator=True)
     async def bdchannel(self, ctx: commands.Context, alert_channel: discord.TextChannel):
         """
-        Sets the channel in which the automatic birthday alerts will be sent
-        Note that you need to have the "Manage server" permission to use this command
+        Sets the channel for auto birthday alerts.
+
+        Note that you need to have the server permission "Manage server"  to use this command
         """
 
         async with self.bot.pool.acquire() as conn:

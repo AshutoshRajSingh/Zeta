@@ -101,9 +101,9 @@ class Utility(commands.Cog, name="Utility"):
     @tag.command()
     async def delete(self, ctx: commands.Context, tagname):
         """
-        Deletes a tag already created by someone
+        Deletes a tag already created by someone.
 
-        tagname here is the name of the tag you wish to delete, if you own it, you can delete it straightforwardly, if you don't, you will need the server permission 'manage messages' in order to delete it."
+        `tagname` here is the name of the tag you wish to delete, if you own it, you can delete it straightforwardly, if you don't, you will need the server permission "manage messages" in order to delete it.
         """
         # If user has manage_messages permission, delete straignt away
 

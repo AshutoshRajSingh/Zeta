@@ -57,7 +57,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def lockdown(self, ctx: commands.Context):
         """
-        Removes the permissions "send_messages" and "add_reactions" from `@everyone`
+        Prevents `@everyone` from sending messages/reactions
         Note that you need to have the server permission "manage messages" to use this command
         """
         await ctx.guild.default_role.edit(permissions=discord.Permissions(send_messages=False, add_reactions=False))
@@ -68,7 +68,8 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(manage_messages=True)
     async def unlock(self, ctx: commands.Context):
         """
-        Enables the permissions "send_messages" and "add_reactions" on `@everyone`
+        Reenables `@everyone` to send messages/reactions
+
         Basically reverses what the lockdown command does
         Note that you need to have the server permission "manage messages" to use this command
         """
@@ -80,8 +81,11 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(manage_messages=True)
     async def mute(self, ctx, target: discord.Member, *, time: str = None):
         """
-        Mutes a member preventing them from sending messages/adding reactions in the server"
-        `target` here is the member you'd like to mute, time (optional) is the time you wish to mute them for, the only acceptable format for time is shown by the example: `1d 2h 4m` Therefore setting the time to `1d 2h 4m` would mute your target for 1 day, 2 hours and 4 minutes
+        Mutes a member so they can't send messages/reactions"
+
+        `target` here is the member you'd like to mute, time (optional) is the time you wish to mute them for, the only acceptable format for time is shown by the example:
+        `1d 2h 4m`
+        Setting the time to `1d 2h 4m` would mute your target for 1 day, 2 hours and 4 minutes
         Note that you need to have the server permission "manage messages" to use this command
         """
         mr = get(ctx.guild.roles, name="Muted")
@@ -122,7 +126,8 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(manage_messages=True)
     async def unmute(self, ctx: commands.Context, target: discord.Member):
         """
-        Unmutes an already muted member, allowing them to send messages/add reactions
+        Unmutes an already muted member
+
         target here is the member you wish to unmute, note that unmuting a member with a timed mute will end their mute period at that instant
         Note that you need to have the server permission "manage messages" to use this command
         """

@@ -15,8 +15,8 @@ class Fun(commands.Cog):
     @commands.command(aliases=['r'])
     async def reddit(self, ctx: commands.Context, subreddit: str):
         """
-        Fetches a random hot post from a subreddit
-        Only works for image posts duh, and doesn't send any posts marked nsfw in the channel
+        Fetches a random hot post from a subreddit.
+        Only works for image posts duh, and doesn't send any posts marked nsfw.
         """
         BASE = 'https://reddit.com'
         ROUTE = BASE + '/r/%s.json'

@@ -15,8 +15,7 @@ QUERY_INTERVAL_MINUTES = 10
 
 class LevelSystem(commands.Cog, name="Levelling"):
     """
-    This group contains all the commands relevant to the on message exp and level system, as you send messages, you
-    receive exp points which translate to different levels.
+    Commands related to levelling, as you send messages, you receive exp points which translate to different levels.
     """
     qualified_name = "Levelling"
 
@@ -212,6 +211,7 @@ class LevelSystem(commands.Cog, name="Levelling"):
     async def level(self, ctx: commands.Context, target: discord.Member = None):
         """
         Used to show own or someone else's level
+
         `target` here is the member whose level you wish to know (can be mention, id or username), if no target specified, own level is shown.
         """
         if not target:
@@ -249,6 +249,7 @@ class LevelSystem(commands.Cog, name="Levelling"):
     async def setmultiplier(self, ctx: commands.Context, target: discord.Member, multiplier: int):
         """
         Used to set exp multiplier of a member
+
         Note that you need to have the server permisson "Manage messages" in order to use this command
 
         `target` here is the member whose multiplier you wish to set, can be mention, id or username
@@ -264,6 +265,7 @@ class LevelSystem(commands.Cog, name="Levelling"):
     async def giveexp(self, ctx: commands.Context, target: discord.Member, amount: int):
         """
         Used to award a certain amount of exp to a member
+
         Note that you need to have the server permission "manage_messages" to use this command
 
         `target` here is the member who you wish to give exp points to

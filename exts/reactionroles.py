@@ -84,6 +84,7 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
     async def create(self, ctx: commands.Context, title: str, *roles: discord.Role):
         """
         Create a reaction roles menu
+
         `title` is the title of the role menu that will show up on the top. The first argument is always the title (Needs to be enclosed in double quotes if it has a space).
 
         `[roles...]` is a space-separated list of roles you wish to create the menu for, you can enter the id of the roles, their name (enclosed in double quotes if it has a space), or their mention.
