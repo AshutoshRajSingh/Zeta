@@ -11,6 +11,14 @@ class Fun(commands.Cog):
     """
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self._subreddit_cache = {}
+
+    async def clear_cache_entry(self, entry):
+        """
+        Does what it says after a fuse of twenty minutes
+        """
+        await asyncio.sleep(20*60)
+        del(self._subreddit_cache[entry])
 
     @commands.command(aliases=['r'])
     async def reddit(self, ctx: commands.Context, subreddit: str):
@@ -23,9 +31,15 @@ class Fun(commands.Cog):
 
         start = time.time()
 
-        async with aiohttp.ClientSession() as cs:
-            async with cs.get(ROUTE % subreddit) as r:
+        if subreddit not in self._subreddit_cache:
+            async with self.bot.cs.get(ROUTE % subreddit) as r:
                 d = await r.json()
+                self._subreddit_cache[subreddit] = d
+
+                # Clears the cache entry for the subreddit after 20 minutes so content can stay fresh
+                self.bot.loop.create_task(self.clear_cache_entry(subreddit))
+        else:
+            d = self._subreddit_cache[subreddit]
 
         # Count the number of nsfw/video posts in the subreddit as they don't go to discord
         nsfw = 1
