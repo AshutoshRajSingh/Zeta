@@ -24,6 +24,7 @@ async def get_pre(_bot: commands.Bot, message: discord.Message):
 
 bot = commands.Bot(command_prefix=get_pre, intents=intents, help_command=None)
 bot.prefixes = {}
+bot.guild_prefs = {}
 bot.initinit = False
 
 # This takes care of doing the stuff that needs to happen as bot starts, for example establishing a connection
