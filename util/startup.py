@@ -1,5 +1,6 @@
 import os
 import util
+import aiohttp
 import discord
 import asyncpg
 import datetime
@@ -48,7 +49,7 @@ def start(bot: commands.Bot):
             async with conn.transaction():
                 async for entry in conn.cursor("SELECT id, prefix FROM guilds"):
                     bot.prefixes[entry.get('id')] = entry['prefix']
-
+    bot.cs = aiohttp.ClientSession()
     bot.loop.create_task(load_prefixes())
     bot.loop.create_task(check_tables())
     bot.loop.create_task(change_presence())
