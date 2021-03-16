@@ -38,6 +38,10 @@ class CommandErrorHandler(commands.Cog):
             description = "I can't do that, I may not have permission to do so, please check if my roles and role " \
                           "permissions are in order"
 
+        elif isinstance(error, commands.CheckFailure):
+            # Wanna keep these to local error handlers
+            return
+
         # If the error was among the ones caught, description will have a non None value therefore we can send
         # an apropriate error message
         if description:
