@@ -15,9 +15,9 @@ class Fun(commands.Cog):
 
     async def clear_cache_entry(self, entry):
         """
-        Does what it says after a fuse of twenty minutes
+        Does what it says after a fuse of five minutes
         """
-        await asyncio.sleep(20*60)
+        await asyncio.sleep(5*60)
         del(self._subreddit_cache[entry])
 
     @commands.command(aliases=['r'])
@@ -36,7 +36,7 @@ class Fun(commands.Cog):
                 d = await r.json()
                 self._subreddit_cache[subreddit] = d
 
-                # Clears the cache entry for the subreddit after 20 minutes so content can stay fresh
+                # Clears the cache entry for the subreddit after 5 minutes so content can stay fresh
                 self.bot.loop.create_task(self.clear_cache_entry(subreddit))
         else:
             d = self._subreddit_cache[subreddit]
