@@ -49,6 +49,10 @@ class DB:
         await self.pool.execute("INSERT INTO guilds (id) "
                                 "VALUES ($1) ON CONFLICT (id) DO NOTHING", guild_id)
 
+    async def make_guild_prefs_entry(self, guild_id: int):
+        await self.pool.execute("INSERT INTO preferences (guildid, levelling, birthdays) VALUES ($1, $2, $3) ON CONFLICT (guildid) DO NOTHING",
+                                guild_id, False, False)
+
     async def remove_guild_entry(self, guild_id):
         """
         Yanks out a row from guilds table based on the id provided
