@@ -65,6 +65,10 @@ class Fun(commands.Cog):
                     misc_invalid += 1
                     continue
 
+                # Imgur support, apparently u just need to yeet .jpg at the end and it automatically redirects you.
+                if selected['data']['url_overridden_by_dest'].startswith('https://imgur.com/'):
+                    selected['data']['url_overridden_by_dest'] += 'jpg'
+
                 # We take the most "relevant" image formats :shrug:
                 if selected['data']['url_overridden_by_dest'].endswith(('jpg', 'png')):
                     e = discord.Embed(title=selected['data']['title'],
