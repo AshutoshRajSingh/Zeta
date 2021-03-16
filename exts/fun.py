@@ -24,7 +24,7 @@ class Fun(commands.Cog):
     async def reddit(self, ctx: commands.Context, subreddit: str):
         """
         Fetches a random hot image-post from a subreddit.
-        Doesn't send any post marked nsfw.
+        Doesn't send any post marked nsfw. Rapid use will cause repetition duh, posts take time to reach hot.
         """
         BASE = 'https://reddit.com'
         ROUTE = BASE + '/r/%s.json'
