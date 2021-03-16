@@ -69,7 +69,7 @@ class Fun(commands.Cog):
                 if selected['data']['url_overridden_by_dest'].endswith(('jpg', 'png')):
                     e = discord.Embed(title=selected['data']['title'],
                                       url=BASE + selected['data']['permalink'],
-                                      colour=discord.Colour.red())
+                                      colour=discord.Colour(0xFFB6C1))
                     e.set_image(url=selected['data']['url_overridden_by_dest'])
 
                     duration = time.time() - start
