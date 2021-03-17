@@ -54,6 +54,16 @@ class Misc(commands.Cog):
         e.add_field(name="asyncpg version", value=f"{asyncpg.__version__}")
         await ctx.send(embed=e)
 
+    @commands.command()
+    async def invite(self, ctx: commands.Context):
+        """
+        Sends a link to add me to a server.
+        """
+        INVITE_URL = "https://discord.com/api/oauth2/authorize?client_id=768171284810694687&permissions=2080763095&scope=bot"
+        e = discord.Embed(description=f"Click [here]({INVITE_URL}) to add me to your server!",
+                          colour=discord.Colour(0xFFB6C1))
+        await ctx.send(embed=e)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Misc(bot))
