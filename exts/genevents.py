@@ -12,8 +12,8 @@ class GenEvents(commands.Cog):
         """
         Listens for guild joining and then makes database entry
         """
-        await self.bot.db.create_member_table(guild=guild)
         await self.bot.db.make_guild_entry(guild.id)
+        await self.bot.db.create_member_table(guild=guild)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):

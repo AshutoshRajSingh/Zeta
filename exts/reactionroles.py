@@ -98,7 +98,7 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
 
         me = await ctx.send(f'React with the reaction that will correspond to the role `{roles[0]}`')
 
-        # Yes I know this is an ugly solution to avoid an unnecessary api request but it it ultimately the only solution
+        # Yes I know this is an ugly solution to avoid an unnecessary api request but it is ultimately the only solution
         # I could think of.
         try:
             r, u = await self.bot.wait_for('reaction_add', timeout=len(roles) * 20, check=check)
@@ -121,7 +121,7 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
 
         for count in range(4):
             try:
-                m = await self.bot.wait_for('message', check=lambda _m: _m.author == ctx.author, timeout=30)
+                m = await self.bot.wait_for('message', check=lambda _m: _m.author == ctx.author and _m.channel == ctx.channel, timeout=30)
                 chan = await self.tcc.convert(ctx, m.content)
                 break
             except commands.BadArgument:
@@ -133,12 +133,9 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
             except asyncio.TimeoutError:
                 await ctx.send("Timed out")
                 return
-        outstring = ""
-        for k, v in brake.items():
-            outstring += f'{k} - {ctx.guild.get_role(v)}\n\n'
 
         e = discord.Embed(title=f"Role menu: {title}",
-                          description=outstring,
+                          description="\n\n".join(f"{k} - {ctx.guild.get_role(v)}"for k, v in brake.items()),
                           colour=discord.Colour.blue())
 
         zero = await chan.send(embed=e)
@@ -148,10 +145,24 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
 
         self._cache[ctx.guild.id][zero.id] = brake
 
+        query = """
+                INSERT INTO selfrole_lookup (guildid, channelid, messageid) 
+                VALUES ($1, $2, $3)
+                """
+        await self.bot.pool.execute(query, ctx.guild.id, chan.id, zero.id)
+
+        query = """
+                INSERT INTO selfrole (messageid, emoji, roleid)
+                VALUES ($1, $2, $3)
+                """
         for k, v in brake.items():
-            await self.bot.pool.execute(
-                'INSERT INTO selfrole (guildid, roleid, messageid, emoji) VALUES($1, $2, $3, $4)',
-                ctx.guild.id, v, zero.id, k)
+            await self.bot.pool.execute(query, zero.id, k, v)
+
+    @reacrole.command()
+    async def edit(self, ctx: commands.Context, message_id: int):
+        """
+
+        """
 
 
 def setup(bot: commands.Bot):

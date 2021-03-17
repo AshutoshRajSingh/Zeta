@@ -35,7 +35,8 @@ class DB:
                               f"exp int, "
                               f"ispaused boolean, "
                               f"boost int, "
-                              f"birthday date)")
+                              f"birthday date, "
+                              f"CONSTRAINT fk_guildid FOREIGN KEY (id) REFERENCES  guilds(id) ON DELETE CASCADE)")
 
     async def make_guild_entry(self, guild_id):
         """
@@ -79,8 +80,8 @@ class DB:
         await self.pool.execute(f"DROP TABLE server_members{guild_id}")
 
     async def hakai_guild(self, guildid: int):
-        await self.remove_guild_table(guildid)
         await self.remove_guild_entry(guildid)
+        await self.remove_guild_table(guildid)
 
     async def fetch_member(self, guildid, memberid):
         """
@@ -131,7 +132,7 @@ class DB:
         data = {}
         async with self.pool.acquire() as conn:
             async with conn.transaction():
-                async for entry in conn.cursor('SELECT * FROM selfrole WHERE guildid = $1', guildid):
+                async for entry in conn.cursor('SELECT selfrole.messageid, emoji, roleid FROM selfrole INNER JOIN selfrole_lookup ON selfrole.messageid = selfrole_lookup.messageid WHERE guildid = $1', guildid):
                     if data.get(entry.get('messageid')) is None:
                         data[entry.get('messageid')] = {
                             entry.get('emoji'): entry.get('roleid')
