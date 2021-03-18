@@ -5,7 +5,7 @@ import datetime
 
 
 async def create_mute_role(guild: discord.Guild):
-    """Creates a mute role in a guild members having it can't send messages or add reactions"""
+    """Creates a mute role in a guild, members having it can't send messages or add reactions"""
     perms = discord.Permissions.none()
     newrole = await guild.create_role(name="Muted", permissions=perms)
 
@@ -133,6 +133,28 @@ class Moderation(commands.Cog):
         """
         await self.perform_unmute(ctx.guild.id, target.id, datetime.datetime.utcnow())
         await ctx.send(embed=discord.Embed(description=f"Unmuted {target.mention}", colour=discord.Colour.green()))
+
+    @commands.command()
+    @commands.has_guild_permissions(kick_members=True)
+    async def kick(self, ctx: commands.Context, target: discord.Member):
+        """
+        Kicks a member.
+        `target` here is the member you would like to boot.
+        Note that you need the server permission "kick members" to use this command.
+        """
+        await target.kick()
+        await ctx.send(embed=discord.Embed(description=f"{target.mention} was kicked"))
+
+    @commands.command()
+    @commands.has_guild_permissions(ban_members=True)
+    async def ban(self, ctx: commands.Context, target: discord.Member, *, reason: str = None):
+        """
+        Bans a member.
+        `target` here is the member you would like to hammer.
+        Note that you need the server permission "ban members" to use this command.
+        """
+        await target.ban(reason=reason)
+        await ctx.send(embed=discord.Embed(description=f"{target.mention} was banned"))
 
     async def perform_unmute(self, guildid, targetid, when: datetime.datetime):
         """Unmutes a target in a guild at a specified time"""
