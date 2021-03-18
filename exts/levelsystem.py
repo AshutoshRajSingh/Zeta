@@ -37,6 +37,8 @@ class LevelSystem(commands.Cog, name="Levelling"):
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
+            if ctx.guild.id not in self.bot.guild_prefs:
+                await self.bot.db.create_default_guild_prefs(ctx.guild.id)
             if not self.bot.guild_prefs[ctx.guild.id].get('levelling'):
                 await ctx.send("The `levelling` plugin has been disabled on this server therefore related commands will not work\n"
                                "Hint: Server admins can enable it using the `plugin enable` command, use the help command to learn more.")
@@ -189,9 +191,13 @@ class LevelSystem(commands.Cog, name="Levelling"):
         :return: None
         """
         try:
-            if not self.bot.guild_prefs[message.guild.id].get('levelling'):
+            if self.bot.guild_prefs[message.guild.id] is None:
+                await self.bot.get_cog('Configuration').create_default_guild_prefs(message.guild.id)
+                return
+            elif not self.bot.guild_prefs[message.guild.id].get('levelling'):
                 return
         except KeyError:
+            await self.bot.get_cog('Configuration').create_default_guild_prefs(message.guild.id)
             return
 
         # Bots shouldn't be levelling up
