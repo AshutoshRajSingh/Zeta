@@ -13,7 +13,7 @@ class GenEvents(commands.Cog):
         Listens for guild joining and then makes database entry
         """
         await self.bot.db.make_guild_entry(guild.id)
-        await self.bot.db.create_member_table(guild=guild)
+        await self.bot.get_cog('Configuration').create_default_guild_prefs(guild.id)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):
@@ -36,6 +36,8 @@ class GenEvents(commands.Cog):
         """
         If bot is pinged a help message telling about command prefix for that server is shown
         """
+        if message.guild is None:
+            return
         if message.guild.me in message.mentions:
             prefix = self.bot.prefixes.get(message.guild.id)
             if prefix:
