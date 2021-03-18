@@ -30,29 +30,18 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
 
         `target` here is the member whose birthday you wish to see, not that they need to have their birthday saved in this server using the setbd command
         """
-        async with self.bot.pool.acquire() as conn:
-            async with conn.transaction():
-                # Table name :kekw:
-                if type(ctx.guild.id) is not int:
-                    raise ValueError("Guild id is somehow not int")
+        query = "SELECT birthday FROM server_members WHERE memberid = $1 AND guildid = $2"
+        data = await self.bot.pool.fetchrow(query, target.id, ctx.guild.id)
 
-                table_name = "server_members" + str(ctx.guild.id)
-
-                query = f"SELECT id, birthday FROM {table_name}" + " WHERE id = $1"
-
-                cur = await conn.cursor(query, target.id)
-                data = await cur.fetchrow()
-
-            # If birthday existed in db
-            if data.get('birthday'):
-                birthday = data.get('birthday').strftime("%d %B")
-            else:
-                # Send error message if birthday wasn't found
-                await ctx.send(f"Couldn't find {target}'s birthday in this server, tell them to set it using "
-                               f"`{ctx.prefix}setbd`")
-                # Short circuit
-                return
-
+        # If birthday existed in db
+        if data.get('birthday'):
+            birthday = data.get('birthday').strftime("%d %B")
+        else:
+            # Send error message if birthday wasn't found
+            await ctx.send(f"Couldn't find {target}'s birthday in this server, tell them to set it using "
+                           f"`{ctx.prefix}setbd`")
+            # Short circuit
+            return
         # Send the birthday as a message
         await ctx.send(f"{target}'s birthday is on {birthday}")
 
@@ -111,49 +100,47 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
 
     @tasks.loop(minutes=20)
     async def bday_poll(self):
-        for guild in self.bot.guilds:
-            try:
-                if not self.bot.guild_prefs[guild.id]['birthdaysystem']:
-                    continue
-            except KeyError:
-                continue
-            if type(guild.id) is not int:
-                raise TypeError("Somehow guild id is not an int")
+        # Future is the time of the next iteration of the loop
+        now = datetime.datetime.utcnow()
+        future = now + datetime.timedelta(minutes=20)
 
-            table_name = f"server_members{guild.id}"
+        # Query the database to find the time at which alert is to be sent out
+        query1 = f"SELECT id, bdayalert, bdayalerttime FROM guilds WHERE bdayalerttime < $1 AND bdayalerttime > $2"
 
-            # Future is the time of the next iteration of the loop
-            now = datetime.datetime.utcnow()
-            future = now + datetime.timedelta(minutes=20)
+        # Query to fetch the members who have their birthday on that day
+        query = "SELECT id, birthday FROM server_members WHERE DATE_PART('day', birthday) = DATE_PART('day', CURRENT_DATE) AND DATE_PART('month', birthday) = DATE_PART('month', CURRENT_DATE) AND guildid = $1"
 
-            # Query the database to find the time at which alert is to be sent out
-            query1 = f"SELECT id, bdayalert, bdayalerttime FROM guilds WHERE bdayalerttime < $1 AND bdayalerttime > $2"
+        async with self.bot.pool.acquire() as conn:
+            async with conn.transaction():
+                async for guild_record in conn.cursor(query1, future, now):
 
-            # Query to fetch the members who have their birthday on that day
-            query = f"SELECT id, birthday FROM {table_name} " + "WHERE DATE_PART('day', birthday) = DATE_PART('day', CURRENT_DATE) AND DATE_PART('month', birthday) = DATE_PART('month', CURRENT_DATE)"
+                    # Converting alert time to string here as it needs to be merged with the whole
+                    # date to make it datetime instead of just time
+                    alert_time = guild_record.get('bdayalerttime').strftime("%H %M %S")
+                    temp_time_str = datetime.datetime.utcnow().strftime('%d %m %y')
 
-            async with self.bot.pool.acquire() as conn:
-                async with conn.transaction():
+                    # Alert time is converted into datetime object with date of today
+                    new_time = datetime.datetime.strptime(f"{temp_time_str} {alert_time}", "%d %m %y %H %M %S")
 
-                    async for guild_record in conn.cursor(query1, future, now):
+                    # Get the channel id in which to send alerts
+                    alert_channel_id = guild_record.get('bdayalert')
 
-                        # Converting alert time to string here as it needs to be merged with the whole
-                        # date to make it datetime instead of just time
-                        alert_time = guild_record.get('bdayalerttime').strftime("%H %M %S")
-                        temp_time_str = datetime.datetime.utcnow().strftime('%d %m %y')
+                    # If an alert time and alert channel id have been set only then will an alert be sent.
+                    if alert_time:
+                        if alert_channel_id:
+                            try:
+                                if self.bot.guild_prefs[guild_record['id']] is None:
+                                    await self.bot.get_cog('Configuration').create_default_guild_prefs(guild_record['id'])
+                                    continue
+                                elif not self.bot.guild_prefs[guild_record['id']].get('birthdays'):
+                                    continue
+                            except KeyError:
+                                await self.bot.get_cog('Configuration').create_default_guild_prefs(guild_record['id'])
+                                continue
 
-                        # Alert time is converted into datetime object with date of today
-                        new_time = datetime.datetime.strptime(f"{temp_time_str} {alert_time}", "%d %m %y %H %M %S")
-
-                        # Get the channel id in which to send alerts
-                        alert_channel_id = guild_record.get('bdayalert')
-
-                        # If an alert time and alert channel id have been set only then will an alert be sent.
-                        if alert_time:
-                            if alert_channel_id:
-                                async for record in conn.cursor(query):
-                                    self.bot.loop.create_task(
-                                        self.send_wish(guild.id, alert_channel_id, record.get('id'), new_time))
+                            async for record in conn.cursor(query, guild_record.get('id')):
+                                self.bot.loop.create_task(
+                                    self.send_wish(guild_record['id'], alert_channel_id, record.get('memberid'), new_time))
 
     @bday_poll.before_loop
     async def kellog(self):
