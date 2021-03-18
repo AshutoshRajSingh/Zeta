@@ -73,11 +73,9 @@ class LevelSystem(commands.Cog, name="Levelling"):
                 guild_id : {
                     member_id : {
                         'id' : "the id of the member",\n
-                        'username' : "deprecated",\n
                         'level' : "the level of the member",\n
                         'exp' : "the exp of the member", \n
                         'boost' : "the boost multiplier", \n
-                        'ispaused' "whether or not the member is pasued":
 
                     }
                 }
@@ -98,10 +96,8 @@ class LevelSystem(commands.Cog, name="Levelling"):
         if data:
             self._cache[guild_id][member_id] = {
                 'id': data.get('id'),
-                'username': data.get('username'),
                 'level': data.get('level'),
                 'exp': data.get('exp'),
-                'ispaused': data.get('ispaused'),
                 'boost': data.get('boost'),
             }
         else:
@@ -129,22 +125,19 @@ class LevelSystem(commands.Cog, name="Levelling"):
         :return: None
         """
         data = self._cache[guildid]
-        table_name = 'server_members' + str(guildid)
         for memberid in list(data):
             current = data[memberid]
-            query = f"UPDATE {table_name} " \
+            query = f"UPDATE server_members " \
                     f"SET level = $1, " \
                     f"exp = $2, " \
-                    f"ispaused = $3, " \
-                    f"boost = $4" \
-                    f"WHERE id = $5"
+                    f"boost = $3" \
+                    f"WHERE memberid = $4 AND guildid = $5"
 
             await self.bot.pool.execute(query,
                                         current['level'],
                                         current['exp'],
-                                        current['ispaused'],
                                         current['boost'],
-                                        memberid)
+                                        memberid, guildid)
 
     async def fetch_top_n(self, guild: discord.Guild, limit: int):
         """
@@ -159,14 +152,12 @@ class LevelSystem(commands.Cog, name="Levelling"):
         if guild.id in self._cache:
             await self.dump_single_guild(guild.id)
 
-        table_name = 'server_members' + str(guild.id)
-
         async with self.bot.pool.acquire() as conn:
             async with conn.transaction():
                 top10 = []
                 rank = 1
-                async for entry in conn.cursor(f"SELECT id, exp, level FROM {table_name} ORDER BY exp DESC LIMIT $1", limit):
-                    top10 += [{'rank': rank, 'id': entry.get('id'), 'exp': entry.get('exp'), 'level': entry.get('level')}]
+                async for entry in conn.cursor("SELECT memberid, exp, level FROM server_members WHERE guildid = $1 ORDER BY exp DESC LIMIT $2", guild.id, limit):
+                    top10 += [{'rank': rank, 'id': entry.get('memberid'), 'exp': entry.get('exp'), 'level': entry.get('level')}]
                     rank += 1
                 return top10
 
