@@ -1,3 +1,4 @@
+import json
 import discord
 from discord.ext import commands
 
@@ -5,7 +6,31 @@ from discord.ext import commands
 class GuildConfig(commands.Cog, name="Configuration"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.bot.plugins = ['levelling', 'birthdays']
+        self.bot.loop.create_task(self.__ainit__())
+
+    async def __ainit__(self):
+        """
+        Loads guild preferences from database and yanks them into cache
+        """
+        async with self.bot.pool.acquire() as conn:
+            async with conn.transaction():
+                async for entry in conn.cursor('SELECT id, preferences FROM guilds'):
+                    if entry.get('preferences') is None:
+                        await self.create_default_guild_prefs(entry.get('id'))
+                    else:
+                        self.bot.guild_prefs[entry.get('id')] = json.loads(entry.get('preferences'))
+
+    async def create_default_guild_prefs(self, guildid, **kwargs):
+        """
+        Method intended to create a default guild preferences dict for a guild.
+        """
+        default = {p: False for p in self.bot.plugins}
+        if kwargs:
+            for k, v in kwargs.items():
+                if k in self.bot.plugins:
+                    default[k] = v
+        self.bot.guild_prefs[guildid] = default
+        await self.bot.pool.execute('UPDATE guilds SET preferences = $1 WHERE id = $2', json.dumps(default), guildid)
 
     @commands.command()
     @commands.has_guild_permissions(administrator=True)
@@ -59,8 +84,8 @@ class GuildConfig(commands.Cog, name="Configuration"):
             # noinspection PyBroadException
             try:
                 self.bot.guild_prefs[ctx.guild.id][plugin] = True
-                await self.bot.pool.execute(f"UPDATE preferences SET {plugin} = $1 WHERE guildid = $2",
-                                            True, ctx.guild.id)
+                await self.bot.pool.execute("UPDATE guilds SET preferences = $1 WHERE id = $2",
+                                            json.dumps(self.bot.guild_prefs[ctx.guild.id]), ctx.guild.id)
                 await ctx.send(embed=discord.Embed(title="Success!",
                                                    description=f"Plugin {plugin} enabled successfully!",
                                                    colour=discord.Colour.green()))
@@ -82,8 +107,8 @@ class GuildConfig(commands.Cog, name="Configuration"):
             # noinspection PyBroadException
             try:
                 self.bot.guild_prefs[ctx.guild.id][plugin] = False
-                await self.bot.pool.execute(f"UPDATE preferences SET {plugin} = $1 WHERE guildid = $2",
-                                            False, ctx.guild.id)
+                await self.bot.pool.execute("UPDATE guilds SET preferences = $1 WHERE id = $2",
+                                            json.dumps(self.bot.guild_prefs[ctx.guild.id]), ctx.guild.id)
                 await ctx.send(embed=discord.Embed(title="Success!",
                                                    description=f"Plugin {plugin} disabled successfully!",
                                                    colour=discord.Colour.red()))
