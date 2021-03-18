@@ -19,6 +19,8 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
 
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
+            if ctx.guild.id not in self.bot.guild_prefs:
+                await self.bot.db.create_default_guild_prefs(ctx.guild.id)
             if not self.bot.guild_prefs[ctx.guild.id].get('birthdays'):
                 await ctx.send("The `birthdays` plugin has been disabled on this server therefore related commands will not work\n"
                                "Hint: Server admins can enable it using the `plugin enable` command, use the help command to learn more.")
@@ -64,9 +66,8 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
             return
 
         # Yeet it into dabatase
-        table_name = f"server_members{ctx.guild.id}"
-        query = f"UPDATE {table_name}" + " SET birthday=to_date($1, 'DD MM YYYY') WHERE id =  $2"
-        await self.bot.pool.execute(query, date_of_birth, ctx.author.id)
+        query = f"UPDATE server_members SET birthday=to_date($1, 'DD MM YYYY') WHERE memberid =  $2 AND guildid = $3"
+        await self.bot.pool.execute(query, date_of_birth, ctx.author.id, ctx.guild.id)
 
         # Send confirmation message stating that the birthday was recorded successfully
         embed = discord.Embed(title="Birthday recorded!",
