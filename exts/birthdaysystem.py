@@ -171,7 +171,7 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
         await self.bday_poll()
 
     @commands.command()
-    @commands.has_guild_permissions(administrator=True)
+    @commands.has_guild_permissions(manage_guild=True)
     async def bdchannel(self, ctx: commands.Context, alert_channel: discord.TextChannel):
         """
         Sets the channel for auto birthday alerts.
