@@ -47,9 +47,7 @@ class DB:
         Returns:
             dict like object containing db member information
         """
-        if type(guildid) is not int:
-            raise TypeError("'guildid' must be int")
-        return await self.pool.fetchrow(f"SELECT * FROM server_members{guildid} WHERE id = $1", memberid)
+        return await self.pool.fetchrow(f"SELECT * FROM server_members WHERE memberid = $1 AND guildid = $2", memberid, guildid)
 
     async def fetch_guild(self, guildid):
         """
