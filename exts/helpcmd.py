@@ -5,6 +5,7 @@ from discord.ext import commands
 class MyHelp(commands.MinimalHelpCommand):
     def __init__(self):
         super().__init__()
+        self.verify_checks = False
 
     @staticmethod
     def _get_command_signature(command):
@@ -43,9 +44,9 @@ class MyHelp(commands.MinimalHelpCommand):
     async def send_cog_help(self, cog):
 
         cmds = cog.get_commands()
-        desc = "\n\n".join([f"{cmd.name} - {cmd.help.splitlines()[0]}" for cmd in cmds if cmd.hidden is False])
+        desc = "\n".join([f"`{cmd.name}` - {cmd.help.splitlines()[0]}" for cmd in cmds if cmd.hidden is False])
         e = discord.Embed(title=f"{cog.qualified_name}",
-                          description=cog.description + "\n\n" + desc,
+                          description=cog.description + "\n\n" + f"Use {self.clean_prefix}help [command] for more info on a command.\nYou can also use {self.clean_prefix}help [category] for more info on a category." + "\n\n" + "**Commands:**\n\n" + desc,
                           colour=discord.Colour.purple())
         chan = self.get_destination()
         await chan.send(embed=e)
