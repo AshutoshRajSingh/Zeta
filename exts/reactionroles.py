@@ -96,7 +96,7 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
         brake = {}
 
         def check(_r, _u):
-            return _u == ctx.author and _r.message == me
+            return _u == ctx.author and _r.message == me and str(_r.emoji) not in brake
 
         me = await ctx.send(f'React with the reaction that will correspond to the role `{roles[0]}`')
 
@@ -163,6 +163,8 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
     @reacrole.command()
     async def edit(self, ctx: commands.Context, message_id: int):
         if message_id in self._cache[ctx.guild.id]:
+
+            # Not actually channel id int but I decided to name it that way anyway
             chanid = await self.bot.pool.fetchrow("SELECT channelid FROM selfrole_lookup WHERE messageid = $1", message_id)
             chan: discord.TextChannel = ctx.guild.get_channel(chanid['channelid'])
 
@@ -177,29 +179,37 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
                                            "\U0001f1e8 - Edit the reaction of a role\n\n"
                                            "\U0001f1e9 - Change the title",
                                colour=discord.Colour.blue())
-
+            # Send the initial menu
             menu = await ctx.send(embed=e1)
 
             for button in buttons:
                 await menu.add_reaction(button)
 
+            # We need the first reaction where the emoji is one of the buttons
             def check(_r, _u):
                 return _u == ctx.author and _r.message == menu and str(_r.emoji) in buttons
+            # Get the option the user chose
             try:
                 r, u = await self.bot.wait_for('reaction_add', check=check, timeout=20)
             except asyncio.TimeoutError:
                 await ctx.send("Timed out")
                 return
 
+            # If user wanted to add a new role to the menu
             if str(r.emoji) == buttons[0]:
                 await menu.clear_reactions()
                 await menu.edit(content="What role do you wish to be added? Enter its mention, id, or name", embed=None)
 
+                # Get the role object for the new role to be added
                 def check0(_m: discord.Message):
                     return _m.author == ctx.author and _m.channel == ctx.channel
                 try:
                     m = await self.bot.wait_for('message', check=check0, timeout=30)
                     newrole = await self.rc.convert(ctx, m.content)
+
+                    if newrole.id in self._cache[ctx.guild.id][PM.id].values():
+                        await ctx.send("Error: role already exists in the menu, perhaps you meant to edit it?")
+                        return
                 except asyncio.TimeoutError:
                     await ctx.send("Timed out")
                 except commands.BadArgument:
@@ -208,8 +218,9 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
                 m = await ctx.send(f"React on this message with the reaction that will correspond to the role `{newrole}`")
 
                 def check1(_r, _u):
-                    return _u == ctx.author and _r.message == m
+                    return _u == ctx.author and _r.message == m and str(_r.emoji) not in self._cache[ctx.guild.id][PM.id]
 
+                # Get the reaction/emoji that will correspond to the new role and yank everything into db
                 try:
                     r, u = await self.bot.wait_for('reaction_add', check=check1, timeout=30)
                     self._cache[ctx.guild.id][PM.id][str(r.emoji)] = newrole.id
@@ -221,6 +232,7 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
 
                     await self.bot.pool.execute(query, PM.id, str(r.emoji), newrole.id)
 
+                    # Standard way of getting the embed description of the role menu
                     newmenudesc = "\n\n".join([f"{k} - {ctx.guild.get_role(v)}" for k, v in self._cache[ctx.guild.id][PM.id].items()])
 
                     newembed = discord.Embed(title=PM.embeds[0].title,
@@ -233,6 +245,48 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
 
                 except asyncio.TimeoutError:
                     await ctx.send("Timed out")
+
+            elif str(r.emoji) == buttons[1]:
+                await menu.clear_reactions()
+                await menu.edit(content="Enter the role you wish to remove from the menu, can be mention, id or name", embed=None)
+
+                try:
+                    def check0(_m: discord.Message):
+                        return _m.author == ctx.author and _m.channel == ctx.channel
+
+                    m = await self.bot.wait_for('message', check=check0, timeout=20)
+                    role = await self.rc.convert(ctx, m.content)
+
+                    if role.id not in self._cache[ctx.guild.id][PM.id].values():
+                        raise commands.BadArgument("Role not in cache")
+
+                    targetkey = ""
+                    for key, value in self._cache[ctx.guild.id][PM.id].items():
+                        if value == role.id:
+                            targetkey = key
+                            break
+                    self._cache[ctx.guild.id][PM.id].pop(targetkey)
+
+                    query = """
+                            DELETE FROM selfrole WHERE messageid = $1 AND roleid = $2
+                            """
+
+                    await self.bot.pool.execute(query, PM.id, role.id)
+                    newmenudesc = "\n\n".join(
+                        [f"{k} - {ctx.guild.get_role(v)}" for k, v in self._cache[ctx.guild.id][PM.id].items()])
+
+                    newembed = discord.Embed(title=PM.embeds[0].title,
+                                             description=newmenudesc,
+                                             colour=discord.Colour.blue())
+
+                    await PM.edit(embed=newembed)
+                    await PM.clear_reaction(targetkey)
+                    await ctx.send(
+                        "Menu edit completed successfully, you may now delete the messages other than the menu itself")
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out")
+                except commands.BadArgument:
+                    await ctx.send("I don't think that role exists in that menu, run the command again")
         else:
             await ctx.send("Menu not found in this server, double check if the id was entered correctly")
 
