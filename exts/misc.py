@@ -64,6 +64,14 @@ class Misc(commands.Cog):
                           colour=discord.Colour(0xFFB6C1))
         await ctx.send(embed=e)
 
+    @commands.command()
+    async def source(self, ctx: commands.Context):
+        """
+        Sends github link to source code
+        """
+        await ctx.send(embed=discord.Embed(description="[Github](https://github.com/finite-simple-group-of-order-two/Zeta)",
+                                           colour=discord.Colour(0xFFB6C1)))
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(Misc(bot))
