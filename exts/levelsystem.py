@@ -220,6 +220,10 @@ class LevelSystem(commands.Cog, name="Levelling"):
                                       color=discord.Colour.green())
                 await message.channel.send(embed=embed)
 
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild: discord.Guild):
+        self._cache[guild.id] = {}
+
     @commands.command()
     async def level(self, ctx: commands.Context, target: discord.Member = None):
         """
