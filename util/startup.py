@@ -43,7 +43,6 @@ def start(bot: commands.Bot):
         """
         Loads server command prefixes from database then assigns them into a botvar bot.prefixes
         """
-        await bot.wait_until_ready()
         async with bot.pool.acquire() as conn:
             async with conn.transaction():
                 async for entry in conn.cursor("SELECT id, prefix FROM guilds"):
