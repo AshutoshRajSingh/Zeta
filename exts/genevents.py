@@ -20,6 +20,8 @@ class GenEvents(commands.Cog):
         """
         Yank out the guild from the database when bot leaves it
         """
+        self.bot.guild_prefs[guild.id] = None
+        self.bot.prefixes[guild.id] = None
         await self.bot.db.hakai_guild(guild.id)
 
     @commands.Cog.listener()
