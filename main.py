@@ -29,24 +29,24 @@ bot.plugins = ['levelling', 'birthdays']
 bot.initinit = False
 
 # This takes care of doing the stuff that needs to happen as bot starts, for example establishing a connection
-# to the database etc.
+# to the database, loading server prefixes etc.
 util.startup.start(bot)
 
 """---Call this inefficient but I like being able to exclude any extension by simply commenting out that line ree---"""
 
 # Extensions inside exts dir named as is, extensions that are a site-package prefixed with '_' here currently jishaku
 extensions = [
-    'moderation',
-    'fun',
-    'commanderrorhandler',
-    'birthdaysystem',
     'guildconfig',
-    'helpcmd',
-    'levelsystem',
-    'utility',
     'genevents',
-    'misc',
+    'commanderrorhandler',
+    'levelsystem',
+    'moderation',
+    'birthdaysystem',
     'reactionroles',
+    'utility',
+    'fun',
+    'misc',
+    'helpcmd',
     '_jishaku',
 ]
 
