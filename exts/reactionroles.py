@@ -1,7 +1,7 @@
 import asyncio
 import discord
 from discord.ext import commands
-from discord.ext.commands import TextChannelConverter
+from discord.ext.commands import TextChannelConverter, RoleConverter
 
 
 class ReactionRoles(commands.Cog, name="Reaction roles"):
@@ -9,6 +9,7 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
         self.bot = bot
         self._cache = {}
         self.tcc = TextChannelConverter()
+        self.rc = RoleConverter()
         self.bot.loop.create_task(self.__ainit__())
 
     async def __ainit__(self):
@@ -54,7 +55,8 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
         hat guild corresponds to what role to be assigned
         """
         role: discord.Role = await self.check_payload(payload)
-
+        if payload.user_id == self.bot.user.id:
+            return
         if role:
             guild = self.bot.get_guild(payload.guild_id)
             member = guild.get_member(payload.user_id)
@@ -160,9 +162,79 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
 
     @reacrole.command()
     async def edit(self, ctx: commands.Context, message_id: int):
-        """
+        if message_id in self._cache[ctx.guild.id]:
+            chanid = await self.bot.pool.fetchrow("SELECT channelid FROM selfrole_lookup WHERE messageid = $1", message_id)
+            chan: discord.TextChannel = ctx.guild.get_channel(chanid['channelid'])
 
-        """
+            # Currently need message content for title, might start saving title in db to avoid this api call idk
+            PM: discord.Message = await chan.fetch_message(message_id)
+
+            buttons = ["\U0001f1e6", "\U0001f1e7", "\U0001f1e8", "\U0001f1e9"]
+
+            e1 = discord.Embed(title="What aspect of the menu do you wish to change?",
+                               description="\U0001f1e6 - Add a role\n\n"
+                                           "\U0001f1e7 - Remove existing role\n\n"
+                                           "\U0001f1e8 - Edit the reaction of a role\n\n"
+                                           "\U0001f1e9 - Change the title",
+                               colour=discord.Colour.blue())
+
+            menu = await ctx.send(embed=e1)
+
+            for button in buttons:
+                await menu.add_reaction(button)
+
+            def check(_r, _u):
+                return _u == ctx.author and _r.message == menu and str(_r.emoji) in buttons
+            try:
+                r, u = await self.bot.wait_for('reaction_add', check=check, timeout=20)
+            except asyncio.TimeoutError:
+                await ctx.send("Timed out")
+                return
+
+            if str(r.emoji) == buttons[0]:
+                await menu.clear_reactions()
+                await menu.edit(content="What role do you wish to be added? Enter its mention, id, or name", embed=None)
+
+                def check0(_m: discord.Message):
+                    return _m.author == ctx.author and _m.channel == ctx.channel
+                try:
+                    m = await self.bot.wait_for('message', check=check0, timeout=30)
+                    newrole = await self.rc.convert(ctx, m.content)
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out")
+                except commands.BadArgument:
+                    await ctx.send("Role not found, please try again")
+
+                m = await ctx.send(f"React on this message with the reaction that will correspond to the role `{newrole}`")
+
+                def check1(_r, _u):
+                    return _u == ctx.author and _r.message == m
+
+                try:
+                    r, u = await self.bot.wait_for('reaction_add', check=check1, timeout=30)
+                    self._cache[ctx.guild.id][PM.id][str(r.emoji)] = newrole.id
+
+                    query = """
+                            INSERT INTO selfrole (messageid, emoji, roleid)
+                            VALUES ($1, $2, $3)
+                            """
+
+                    await self.bot.pool.execute(query, PM.id, str(r.emoji), newrole.id)
+
+                    newmenudesc = "\n\n".join([f"{k} - {ctx.guild.get_role(v)}" for k, v in self._cache[ctx.guild.id][PM.id].items()])
+
+                    newembed = discord.Embed(title=PM.embeds[0].title,
+                                             description=newmenudesc,
+                                             colour=discord.Colour.blue())
+
+                    await PM.edit(embed=newembed)
+                    await PM.add_reaction(r.emoji)
+                    await ctx.send("Menu edit completed successfully, you may now delete the messages other than the menu itself")
+
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out")
+        else:
+            await ctx.send("Menu not found in this server, double check if the id was entered correctly")
 
 
 def setup(bot: commands.Bot):
