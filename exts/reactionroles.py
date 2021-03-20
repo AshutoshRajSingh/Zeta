@@ -161,7 +161,15 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
             await self.bot.pool.execute(query, zero.id, k, v)
 
     @reacrole.command()
+    @commands.has_guild_permissions(manage_roles=True)
     async def edit(self, ctx: commands.Context, message_id: int):
+        """
+        Edits an already created reaction roles menu.
+
+        `message_id` here is the id of the message of the role menu you wish to edit, after using this command it will guide you through the process of editing the menu, step by step.
+
+        Note that you need the server permisson "manage roles" to use this command
+        """
         if message_id in self._cache[ctx.guild.id]:
 
             # Not actually channel id int but I decided to name it that way anyway
@@ -169,7 +177,11 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
             chan: discord.TextChannel = ctx.guild.get_channel(chanid['channelid'])
 
             # Currently need message content for title, might start saving title in db to avoid this api call idk
-            PM: discord.Message = await chan.fetch_message(message_id)
+            try:
+                PM: discord.Message = await chan.fetch_message(message_id)
+            except discord.NotFound:
+                await ctx.send("It would seem that the message for the role menu you're trying to edit has been deleted, please try creating a new one")
+                return
 
             buttons = ["\U0001f1e6", "\U0001f1e7", "\U0001f1e8", "\U0001f1e9"]
 
@@ -287,6 +299,60 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
                     await ctx.send("Timed out")
                 except commands.BadArgument:
                     await ctx.send("I don't think that role exists in that menu, run the command again")
+
+            elif str(r.emoji) == buttons[2]:
+                m = await ctx.send("Enter the role for which you wish to change the reaction.")
+
+                try:
+                    def check0(_m: discord.Message):
+                        return _m.author == ctx.author and _m.channel == ctx.channel
+
+                    m = await self.bot.wait_for('message', check=check0, timeout=20)
+                    role = await self.rc.convert(ctx, m.content)
+
+                    if role.id not in self._cache[ctx.guild.id][PM.id].values():
+                        raise commands.BadArgument("Role not in cache")
+
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out")
+                    return
+                except commands.BadArgument:
+                    await ctx.send("Couldn't find the role you wished to edit in the menu")
+                    return
+
+                m1 = await ctx.send(f"React on this message with the new reaction that will correspond to the role {role}")
+
+                def check1(_r, _u):
+                    return _u == ctx.author and _r.message == m1 and str(_r.emoji) not in self._cache[ctx.guild.id][PM.id]
+
+                # Get the reaction/emoji that will correspond to the new role and yank everything into db
+                try:
+                    r, u = await self.bot.wait_for('reaction_add', check=check1, timeout=30)
+
+                    for k,v in self._cache[ctx.guild.id][PM.id].items():
+                        if v == role.id:
+                            TargetKey = k
+
+                    self._cache[ctx.guild.id][PM.id][str(r.emoji)] = role.id
+                    self._cache[ctx.guild.id][PM.id].pop(TargetKey)
+
+                    await self.bot.pool.execute("UPDATE selfrole SET emoji = $1 WHERE roleid = $2 AND messageid = $3", str(r.emoji), role.id, PM.id)
+                    newmenudesc = "\n\n".join(
+                        [f"{k} - {ctx.guild.get_role(v)}" for k, v in self._cache[ctx.guild.id][PM.id].items()])
+
+                    newembed = discord.Embed(title=PM.embeds[0].title,
+                                             description=newmenudesc,
+                                             colour=discord.Colour.blue())
+
+                    await PM.edit(embed=newembed)
+                    await PM.clear_reaction(TargetKey)
+                    await PM.add_reaction(str(r.emoji))
+                    await ctx.send(
+                        "Menu edit completed successfully, you may now delete the messages other than the menu itself")
+                    await PM.edit()
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out")
+
         else:
             await ctx.send("Menu not found in this server, double check if the id was entered correctly")
 
