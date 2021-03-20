@@ -301,7 +301,8 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
                     await ctx.send("I don't think that role exists in that menu, run the command again")
 
             elif str(r.emoji) == buttons[2]:
-                m = await ctx.send("Enter the role for which you wish to change the reaction.")
+                await menu.clear_reactions()
+                await menu.edit(embed=None, content="Enter the role for which you wish to change the reaction.")
 
                 try:
                     def check0(_m: discord.Message):
@@ -352,6 +353,23 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
                     await PM.edit()
                 except asyncio.TimeoutError:
                     await ctx.send("Timed out")
+
+            elif str(r.emoji) == buttons[3]:
+                await menu.clear_reactions()
+                await menu.edit(embed=None, content="Enter the new title you want the menu to have")
+
+                def check(_m: discord.Message):
+                    return _m.author == ctx.author and _m.channel == ctx.channel
+
+                try:
+                    m = await self.bot.wait_for('message', check=check, timeout=30)
+                    e = discord.Embed(title=f"Role menu: {m.content}",
+                                      description=PM.embeds[0].description,
+                                      colour=PM.embeds[0].colour)
+                    await PM.edit(embed=e)
+                except asyncio.TimeoutError:
+                    await ctx.send("Timed out")
+
 
         else:
             await ctx.send("Menu not found in this server, double check if the id was entered correctly")
