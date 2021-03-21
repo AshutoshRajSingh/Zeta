@@ -13,12 +13,12 @@ class Zeta(commands.Bot):
         print(f"All dates/time are in UTC unless stated otherwise\n"
               f"Started process at {datetime.datetime.utcnow()}")
         util.startup.start(self)
-        self.load_exts()
         self.prefixes = {}
         self.guild_prefs = {}
         self.plugins = ['levelling', 'birthdays']
         self.initinit = False
         self.token = kwargs.get('token')
+        self.load_exts()
 
     async def get_pre(self, _bot: commands.Bot, message: discord.Message):
         if message.guild is None:
