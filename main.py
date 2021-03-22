@@ -1,6 +1,7 @@
 import os
 import sys
 import util
+import asyncpg
 import discord
 import datetime
 import traceback
@@ -15,6 +16,8 @@ class Zeta(commands.Bot):
         util.startup.start(self)
         self.prefixes = {}
         self.guild_prefs = {}
+        self.Color = util.Color
+        self.Colour = self.Color
         self.plugins = ['levelling', 'birthdays']
         self.initinit = False
         self.token = kwargs.get('token')
