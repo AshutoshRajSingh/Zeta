@@ -70,7 +70,7 @@ class GuildConfig(commands.Cog, name="Configuration"):
         # hehe
         await ctx.send(embed=discord.Embed(title='Plugins for this server:',
                                            description='\n'.join([f"{k} : {'enabled' if v else 'disabled'}" for k, v in self.bot.guild_prefs[ctx.guild.id].items()]),
-                                           colour=discord.Colour(0xFFB6C1)))
+                                           colour=self.bot.Color.light_pink()))
 
     @_plugin.command()
     @commands.has_guild_permissions(manage_guild=True)
