@@ -8,13 +8,18 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self._cache = {}
+
+        # Used so frequently figured it'd be good to make them class attribs
         self.tcc = TextChannelConverter()
         self.rc = RoleConverter()
+
+        # ree
         self.bot.loop.create_task(self.__ainit__())
 
     async def __ainit__(self):
         await self.bot.wait_until_ready()
         for guild in self.bot.guilds:
+            self._cache[guild.id] = {}
             self._cache[guild.id] = await self.bot.db.fetch_guild_selfole_data(guild.id)
 
     async def check_payload(self, payload: discord.RawReactionActionEvent):
