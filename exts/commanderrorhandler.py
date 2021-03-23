@@ -1,12 +1,13 @@
-import discord
-from discord.ext import commands
-import traceback
 import sys
 import asyncio
+import discord
+import traceback
+from main import Zeta
+from discord.ext import commands
 
 
 class CommandErrorHandler(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
 
     @commands.Cog.listener()
@@ -74,5 +75,5 @@ class CommandErrorHandler(commands.Cog):
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(CommandErrorHandler(bot))

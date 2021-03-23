@@ -1,7 +1,8 @@
 import discord
-from discord.ext import commands, tasks
-from discord.utils import get
 import datetime
+from main import Zeta
+from discord.utils import get
+from discord.ext import commands, tasks
 
 
 async def create_mute_role(guild: discord.Guild):
@@ -40,7 +41,7 @@ class Moderation(commands.Cog):
     Commands to deal with pesky trolls and spammers, all of them at one place
     """
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
         self._cache = {}
         self.mute_poll.start()
@@ -203,5 +204,5 @@ class Moderation(commands.Cog):
                                                                   entry.get('mutedtill')))
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(Moderation(bot))

@@ -1,5 +1,6 @@
 import discord
 import datetime
+from main import Zeta
 from discord.ext import commands, tasks
 
 
@@ -7,7 +8,7 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
     """
     Commands related to birthdays and the like, saving, retrieving, and automatic alerts.
     """
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
         self.bday_poll.start()
 
@@ -178,5 +179,5 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
             await ctx.send(embed=e)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(BirthdaySystem(bot))

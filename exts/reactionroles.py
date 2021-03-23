@@ -1,11 +1,12 @@
 import asyncio
 import discord
+from main import Zeta
 from discord.ext import commands
 from discord.ext.commands import TextChannelConverter, RoleConverter
 
 
 class ReactionRoles(commands.Cog, name="Reaction roles"):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
         self._cache = {}
 
@@ -386,5 +387,5 @@ class ReactionRoles(commands.Cog, name="Reaction roles"):
             await ctx.send("Menu not found in this server, double check if the id was entered correctly")
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(ReactionRoles(bot))

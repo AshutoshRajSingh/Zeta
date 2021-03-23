@@ -1,10 +1,11 @@
 import json
 import discord
+from main import Zeta
 from discord.ext import commands
 
 
 class GuildConfig(commands.Cog, name="Configuration"):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
         self.bot.loop.create_task(self.__ainit__())
 
@@ -120,5 +121,5 @@ class GuildConfig(commands.Cog, name="Configuration"):
             await ctx.send(f"Invalid plugin name, use `{ctx.prefix}plugin` to get a list of valid plugin names")
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(GuildConfig(bot))

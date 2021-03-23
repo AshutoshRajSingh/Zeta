@@ -1,6 +1,7 @@
 import io
 import discord
 import matplotlib
+from main import Zeta
 from discord.ext import commands
 from matplotlib import pyplot as plt
 
@@ -36,7 +37,7 @@ def generate_plot(x, y):
 
 
 class Utility(commands.Cog, name="Utility"):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
 
     async def delete_tag(self, tagname, guildid):
@@ -155,5 +156,5 @@ class Utility(commands.Cog, name="Utility"):
         await ctx.send(file=file, embed=e)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(Utility(bot))

@@ -1,10 +1,11 @@
 import discord
 import datetime
+from main import Zeta
 from discord.ext import commands
 
 
 class GenEvents(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
 
     @commands.Cog.listener()
@@ -51,5 +52,5 @@ class GenEvents(commands.Cog):
                                        f"Hint: Admins can change the server prefix using the `prefix` command")
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(GenEvents(bot))

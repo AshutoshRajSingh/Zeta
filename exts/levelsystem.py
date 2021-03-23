@@ -1,9 +1,10 @@
+import asyncio
 import discord
 import datetime
-from discord.ext import commands, tasks
-from math import floor, sqrt
+from main import Zeta
 from typing import Union
-import asyncio
+from math import floor, sqrt
+from discord.ext import commands, tasks
 
 
 def is_me(ctx):
@@ -18,7 +19,7 @@ class LevelSystem(commands.Cog, name="Levelling"):
     Commands related to levelling, as you send messages, you receive exp points which translate to different levels.
     """
 
-    def __init__(self, bot):
+    def __init__(self, bot: Zeta):
         super().__init__()
         self.bot = bot
 
@@ -38,7 +39,8 @@ class LevelSystem(commands.Cog, name="Levelling"):
     async def cog_command_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
             if ctx.guild.id not in self.bot.guild_prefs:
-                await self.bot.db.create_default_guild_prefs(ctx.guild.id)
+                cg = self.bot.get_cog('Configuration')
+                await cg.create_default_guild_prefs(ctx.guild.id)
             if not self.bot.guild_prefs[ctx.guild.id].get('levelling'):
                 await ctx.send("The `levelling` plugin has been disabled on this server therefore related commands will not work\n"
                                "Hint: Server admins can enable it using the `plugin enable` command, use the help command to learn more.")
@@ -305,5 +307,5 @@ class LevelSystem(commands.Cog, name="Levelling"):
         await ctx.send("db updated (hopefully)")
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(LevelSystem(bot))

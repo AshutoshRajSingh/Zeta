@@ -2,6 +2,7 @@ import time
 import random
 import discord
 import asyncio
+from main import Zeta
 from discord.ext import commands
 
 
@@ -9,7 +10,7 @@ class Fun(commands.Cog):
     """
     General commands for getting memes, cute animol pics and much more!
     """
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
         self._subreddit_cache = {}
 
@@ -135,5 +136,5 @@ class Fun(commands.Cog):
         await ctx.send(embed=e)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(Fun(bot))

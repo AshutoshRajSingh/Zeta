@@ -3,6 +3,7 @@ import time
 import discord
 import asyncpg
 import datetime
+from main import Zeta
 from discord.ext import commands
 
 start = datetime.datetime.utcnow()
@@ -12,7 +13,7 @@ class Misc(commands.Cog):
     """
     Miscellaneous commands that don't quite fit any other category
     """
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Zeta):
         self.bot = bot
 
     def get_privileged_intents(self):
@@ -46,8 +47,8 @@ class Misc(commands.Cog):
         await self.bot.pool.execute('select')
         e.add_field(name="Database latency", value=f"{int((time.time() - temp_start) * 1000)}ms")
 
-        e.add_field(name="Servers joined", value=len(self.bot.guilds))
-        e.add_field(name="Users watched", value=len(self.bot.users))
+        e.add_field(name="Servers joined", value=str(len(self.bot.guilds)))
+        e.add_field(name="Users watched", value=str(len(self.bot.users)))
         e.add_field(name="Privileged Intents", value=self.get_privileged_intents())
         e.add_field(name="Python version", value=f"{sys.version[:5]}")
         e.add_field(name="discord.py version", value=f"{discord.__version__}")
@@ -73,6 +74,5 @@ class Misc(commands.Cog):
                                            colour=discord.Colour(0xFFB6C1)))
 
 
-def setup(bot: commands.Bot):
+def setup(bot: Zeta):
     bot.add_cog(Misc(bot))
-
