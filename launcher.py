@@ -1,10 +1,9 @@
 import os
 import sys
+import socket
 import asyncpg
 import asyncio
-import socket
 from main import Zeta
-import os
 
 
 async def db_init(Url):
