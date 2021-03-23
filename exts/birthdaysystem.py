@@ -78,15 +78,6 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
     async def send_wish(self, guildid: int, channelid: int, memberid: int, when: datetime.datetime):
         """
         Sends a birthday wish in a guild at a specified time in UTC
-
-        Args:
-            guildid:
-            channelid:
-            memberid:
-            when:
-
-        Returns: None
-
         """
         await discord.utils.sleep_until(when)
 
