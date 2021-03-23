@@ -104,7 +104,3 @@ class Zeta(commands.Bot):
 
     def kickstart(self):
         self.run(self.token)
-
-
-bot = Zeta(token=os.environ['BOT_TOKEN'])
-bot.kickstart()
