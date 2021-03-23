@@ -1,8 +1,8 @@
-#Zeta
+# Zeta
 
 Another general purpose discord bot with most of the usual quirks including a moderation system, an on message level/exp 
 system, reaction roles and the like.
-##Setting up:
+## Setting up:
 The basic requirements are listed as follows:
  - Python 3.8.x with pip
  - A Postgresql 12 database with a user with superuser permissions
@@ -31,13 +31,13 @@ python launcher.py db init
 ```
 If the last line says "Db initialized successfully", you're good to go.
 
-##Running
+## Running
 To run the bot, open your terminal in the base dir, and type in:
 ```shell
 python launcher.py bot start
 ```
 
-##Usage
+## Usage
 The default prefix for every server is `.`, use `.help` in your server to get more information.  
 Note that things like the on message level/exp system are disabled by default, use the `plugin` and `help plugin` 
 commands for more info.
