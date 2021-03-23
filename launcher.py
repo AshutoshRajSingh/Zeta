@@ -3,25 +3,11 @@ import sys
 import asyncpg
 import asyncio
 import socket
-
-"""
-To have the database set up for you, 
-get its url (format - postgres://<username>:<password>@<host>:<port>/<database_name>)
-
-then use 
-python autodb.py <database_url> init
-
-(Without the <>)
-
-ALTERNATIVELY 
-
-If you have already set the os environment variable DATABASE_URL equal to the url of your database, use:
-
-python autodb.py osenv init
-"""
+from main import Zeta
+import os
 
 
-async def init(Url):
+async def db_init(Url):
 
     try:
         conn = await asyncpg.connect(Url)
@@ -57,10 +43,16 @@ async def init(Url):
 if len(sys.argv) < 3:
     raise ValueError("Missing one or more required command line argument(s)")
 
-if sys.argv[1] == 'osenv':
+if sys.argv[1] == 'db':
     url = os.environ['DATABASE_URL']
-else:
-    url = sys.argv[1]
+    if sys.argv[2] == 'init':
+        asyncio.get_event_loop().run_until_complete(db_init(url))
 
-if sys.argv[2] == 'init':
-    asyncio.get_event_loop().run_until_complete(init(url))
+if sys.argv[1] == 'bot':
+    if sys.argv[2] in ['start', 'kickstart']:
+        bot = Zeta(token=os.environ['BOT_TOKEN'])
+        bot.kickstart()
+
+
+
+

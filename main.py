@@ -13,9 +13,14 @@ class Zeta(commands.Bot):
         super().__init__(command_prefix=self.get_pre, **kwargs)
         print(f"All dates/time are in UTC unless stated otherwise\n"
               f"Started process at {datetime.datetime.utcnow()}")
-        util.startup.start(self)
+        self.pool: asyncpg.pool.Pool = None
+        self.db: util.DB = None
         self.prefixes = {}
         self.guild_prefs = {}
+        self.loop.run_until_complete(self.connect_to_db())
+        self.loop.create_task(self.check_tables())
+        self.loop.create_task(self._change_presence())
+        self.loop.create_task(self.load_prefixes())
         self.Color = util.Color
         self.Colour = self.Color
         self.plugins = ['levelling', 'birthdays']
@@ -23,7 +28,44 @@ class Zeta(commands.Bot):
         self.token = kwargs.get('token')
         self.load_exts()
 
+    async def connect_to_db(self):
+        """
+        Creates connection pool to database
+        Returns:None
+        """
+        self.pool = await asyncpg.create_pool(os.environ['DATABASE_URL'], max_size=20)
+        print(f"Connection to database made at {datetime.datetime.utcnow()}")
+        self.db = util.DB(self.pool)
+
+    async def check_tables(self):
+        """
+        coro to check if tables exist for all guilds the bot is in, on startup and create table for any guild that isn't
+        there but should be,
+        """
+        await self.wait_until_ready()
+        for guild in self.guilds:
+            await self.db.make_guild_entry(guild.id)
+
+    async def _change_presence(self):
+        """
+        Changes the activity to a hardcoded value
+        """
+        await self.wait_until_ready()
+        await self.change_presence(activity=discord.Game("Ping me for usage"))
+
+    async def load_prefixes(self):
+        """
+        Loads server command prefixes from database then assigns them into a botvar bot.prefixes
+        """
+        async with self.pool.acquire() as conn:
+            async with conn.transaction():
+                async for entry in conn.cursor("SELECT id, prefix FROM guilds"):
+                    self.prefixes[entry.get('id')] = entry['prefix']
+
     async def get_pre(self, _bot: commands.Bot, message: discord.Message):
+        """
+        Prefixes loaded on bot start and cached, if server hasn't set prefix, defaults to '.'
+        """
         if message.guild is None:
             return '.'
         prefix = self.prefixes.get(message.guild.id)
