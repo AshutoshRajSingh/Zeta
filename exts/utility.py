@@ -21,8 +21,11 @@ def generate_plot(x, y):
     """
     fig, ax = plt.subplots(1, 1)
     ax.plot(x, y, color='white')
+
+    # Color of the dark theme embed
     fig.patch.set_facecolor('#2f3136')
     ax.set_facecolor('#2f3136')
+
     ax.tick_params(axis='x', colors='white')
     ax.tick_params(axis='y', colors='white')
     for child in ax.get_children():
