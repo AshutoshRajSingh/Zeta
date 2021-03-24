@@ -1,5 +1,6 @@
 import io
 import discord
+import asyncpg
 import matplotlib
 from main import Zeta
 from discord.ext import commands
@@ -68,17 +69,13 @@ class Utility(commands.Cog, name="Utility"):
 
         `tagname` here is the name you wish the new tag to have, `content` here is the text you wish to store, for example to store the text "spaghetti" under the tagname "pasta" you would use `tag create pasta spaghetti`
         """
-        # Need to make sure that tag we're about to create doesn't already exist
-        checkquery = "SELECT exists(SELECT content FROM tags WHERE name = $1 AND guildid = $2)"
-        data = await self.bot.pool.fetchrow(checkquery, tagname, ctx.guild.id)
-        if data.get('exists'):
-            await ctx.send("A tag with that name already exists in this guild")
-        else:
-            # Basic sql query to insert data into the table
+        try:
             insertquery = "INSERT INTO tags(name, content, guildid, authorid) VALUES ($1, $2, $3, $4)"
             await self.bot.pool.execute(insertquery, tagname, content, ctx.guild.id, ctx.author.id)
             await ctx.send(embed=discord.Embed(description=f"Tag {tagname} successfully created",
                                                colour=discord.Colour.green()))
+        except asyncpg.UniqueViolationError:
+            await ctx.send("A tag with that name already exists in this server!")
 
     @tag.command()
     async def edit(self, ctx: commands.Context, tagname, *, content):
