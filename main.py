@@ -14,11 +14,12 @@ class Zeta(commands.Bot):
         super().__init__(command_prefix=self.get_pre, intents=discord.Intents.all(), **kwargs)
         print(f"All dates/time are in UTC unless stated otherwise\n"
               f"Started process at {datetime.datetime.utcnow()}")
-        self.pool: asyncpg.pool.Pool = None
-        self.db: util.DB = None
+        self.pool: asyncpg.pool.Pool = self.loop.run_until_complete(asyncpg.create_pool(os.environ['DATABASE_URL'], max_size=20))
+        print(f"Connection to database made at {datetime.datetime.utcnow()}")
+        self.db: util.DB = util.DB(self.pool)
+        self.cs = aiohttp.ClientSession()
         self.prefixes = {}
         self.guild_prefs = {}
-        self.loop.run_until_complete(self.connect_to_db())
         self.loop.create_task(self.check_tables())
         self.loop.create_task(self._change_presence())
         self.loop.create_task(self.load_prefixes())
