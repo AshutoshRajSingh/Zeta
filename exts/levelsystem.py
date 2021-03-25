@@ -226,6 +226,11 @@ class LevelSystem(commands.Cog, name="Levelling"):
     async def on_guild_remove(self, guild: discord.Guild):
         self._cache[guild.id] = {}
 
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        self._cache[member.guild.id].pop(member.id)
+        await self.bot.db.hakai_member(member.guild.id, member.id)
+
     @commands.command()
     async def level(self, ctx: commands.Context, target: discord.Member = None):
         """
@@ -261,6 +266,7 @@ class LevelSystem(commands.Cog, name="Levelling"):
             m = ctx.guild.get_member(entry.get('id'))
             if m is None:
                 display_name = f"Deleted user (id:{entry.get('id')})"
+                embed.set_footer(text="Hint: mods can use the reset command to get rid of the \"Deleted user\" in the leaderboard if they have left the server")
             else:
                 display_name = m.display_name
             embed.add_field(name=f"{entry.get('rank')}.{display_name}",
@@ -301,6 +307,27 @@ class LevelSystem(commands.Cog, name="Levelling"):
                           description=f"Added {amount} points to {target.mention}",
                           colour=discord.Colour.green())
         await ctx.send(embed=e)
+
+    @commands.command()
+    @commands.has_guild_permissions(manage_messages=True)
+    async def reset(self, ctx: commands.Context, target: Union[discord.Member, int]):
+        """
+        Resets a member's exp/level and basically removes them from the database.
+
+        This is useful in the event that a member leaves the guild when the bot is offline therefore it is not able to automatically delete their entry so it shows up as `deleted user` on the leaderboard
+        `target` here is the member you'd like to reset, can be id or mention
+        """
+        if type(target) is int:
+            pass
+        else:
+            target = target.id
+
+        try:
+            self._cache[ctx.guild.id].pop(target)
+        except KeyError:
+            pass
+        finally:
+            await self.bot.db.hakai_member(ctx.guild.id, target)
 
     @commands.command(hidden=True)
     @commands.check(is_me)
