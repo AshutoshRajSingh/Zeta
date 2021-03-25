@@ -75,6 +75,18 @@ class DB:
             query = "INSERT INTO server_members (guildid, memberid, level, exp, boost, birthday) VALUES ($1, $2, $3, $4, $5, $6)"
             await conn.execute(query, guildid, memberid, 0, 0, 1, None)
 
+    async def hakai_member(self, guildid, memberid):
+        """
+        Removes a member from the server_members table
+
+        Args:
+            guildid: id of guild in question
+            memberid: id of member in question
+
+        Returns: None
+        """
+        await self.pool.execute('DELETE FROM server_members WHERE guildid = $1 AND memberid = $2', guildid, memberid)
+
     async def fetch_guild_selfole_data(self, guildid):
         data = {}
         async with self.pool.acquire() as conn:
