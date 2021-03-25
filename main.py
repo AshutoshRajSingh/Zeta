@@ -1,6 +1,7 @@
 import os
 import sys
 import util
+import aiohttp
 import asyncpg
 import discord
 import datetime
@@ -10,7 +11,7 @@ from discord.ext import commands
 
 class Zeta(commands.Bot):
     def __init__(self, **kwargs):
-        super().__init__(command_prefix=self.get_pre, **kwargs)
+        super().__init__(command_prefix=self.get_pre, intents=discord.Intents.all(), **kwargs)
         print(f"All dates/time are in UTC unless stated otherwise\n"
               f"Started process at {datetime.datetime.utcnow()}")
         self.pool: asyncpg.pool.Pool = None
@@ -27,15 +28,6 @@ class Zeta(commands.Bot):
         self.initinit = False
         self.token = kwargs.get('token')
         self.load_exts()
-
-    async def connect_to_db(self):
-        """
-        Creates connection pool to database
-        Returns:None
-        """
-        self.pool = await asyncpg.create_pool(os.environ['DATABASE_URL'], max_size=20)
-        print(f"Connection to database made at {datetime.datetime.utcnow()}")
-        self.db = util.DB(self.pool)
 
     async def check_tables(self):
         """
@@ -75,6 +67,7 @@ class Zeta(commands.Bot):
             return "."
 
     def load_exts(self):
+        # Extensions that are inside exts dir put as is, exts that are a site package prefixed with _
         extensions = [
             'guildconfig',
             'genevents',
