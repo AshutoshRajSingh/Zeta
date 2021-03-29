@@ -6,6 +6,7 @@ class DB:
     def __init__(self, pool):
         self.pool = pool
         self.remove_guild = self.hakai_guild
+        self.remove_member = self.hakai_member
 
     async def make_guild_entry(self, guild_id):
         """
