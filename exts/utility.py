@@ -60,7 +60,7 @@ class Utility(commands.Cog, name="Utility"):
         data = await self.bot.pool.fetchrow(query, tagname, ctx.guild.id)
         if data:
             content = data.get('content')
-            await ctx.send(content)
+            await ctx.send(content, allowed_mentions=discord.AllowedMentions.none())
         else:
             await ctx.send("Could not find the tag you're looking for, it may not have been created in this guild "
                            "scope")
