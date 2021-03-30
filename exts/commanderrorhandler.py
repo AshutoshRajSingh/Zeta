@@ -29,8 +29,7 @@ class CommandErrorHandler(commands.Cog):
                           f"to get information about how to use that command"
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            description = f"It seems you missed providing a parameter that was required to run this command, please use " \
-                          f"`{ctx.prefix}help {ctx.command.name}` to get information about using that command"
+            description = str(error)
 
         elif isinstance(error, commands.MissingPermissions):
             description = str(error)
