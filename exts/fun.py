@@ -14,6 +14,9 @@ class Fun(commands.Cog):
         self.bot = bot
         self._subreddit_cache = {}
 
+        # temporary hardcoded value of the id of the latest xkcd comic, updates whevever the xkcd latest command is used
+        self.mrx = 2000
+
     async def clear_cache_entry(self, entry):
         """
         Does what it says after a fuse of five minutes
@@ -134,6 +137,47 @@ class Fun(commands.Cog):
             await ctx.send(d.get('file'))
             return
         await ctx.send(embed=e)
+
+    @commands.group(invoke_without_command=True)
+    async def xkcd(self, ctx: commands.Context, ComicId: int):
+        """
+        Sends an xkcd comic strip with the id provided
+
+        `ComicId` here is the id of the comic you wish to fetch, has to be a number duh.
+        Has subcommands that provide additional functionality, read up below.
+        """
+        BASE = 'https://xkcd.com/'
+        ROUTE = BASE+'%d/info.0.json'
+        async with self.bot.cs.get(ROUTE % ComicId) as r:
+            if r.status != 200:
+                return await ctx.send("No xkcd found")
+            d = await r.json()
+        await ctx.send(
+            embed=discord.Embed(title=d.get('title'), colour=self.bot.Colour.light_pink()).set_image(url=d.get('img')))
+
+    @xkcd.command()
+    async def current(self, ctx: commands.Context):
+        """
+        Sends the current latest xkcd comic.
+        """
+        BASE = 'https://xkcd.com/'
+        ROUTE = BASE + 'info.0.json'
+        async with self.bot.cs.get(ROUTE) as r:
+            if r.status != 200:
+                return await ctx.send('Something bad happened')
+            d = await r.json()
+        await ctx.send(
+            embed=discord.Embed(title=d.get('title'), colour=self.bot.Colour.light_pink()).set_image(url=d.get('img')))
+        self.mrx = d.get('num')
+
+    @xkcd.command()
+    async def random(self, ctx: commands.Context):
+        """
+        Sends a random xkcd comic.
+        """
+        # works cuz stores the number (id) of current latest comic whenever the xkcd latest command is called, then makes
+        # a random choice between 1 and that number to avoid overflow, unfortunately this
+        return await self.xkcd(ctx, random.randint(1, self.mrx))
 
 
 def setup(bot: Zeta):
