@@ -288,7 +288,7 @@ class LevelSystem(commands.Cog, name="Levelling"):
         """
         if target.id not in self._cache[ctx.guild.id]:
             await self.add_to_cache(ctx.guild.id, target.id)
-            self._cache[ctx.guild.id][target.id]['boost'] = int(multiplier)
+        self._cache[ctx.guild.id][target.id]['boost'] = int(multiplier)
         await ctx.send(f"{target}'s multiplier has been set to {multiplier}")
 
     @commands.command()
