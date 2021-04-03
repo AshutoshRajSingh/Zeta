@@ -14,8 +14,20 @@ class Fun(commands.Cog):
         self.bot = bot
         self._subreddit_cache = {}
 
-        # temporary hardcoded value of the id of the latest xkcd comic, updates whevever the xkcd latest command is used
-        self.mrx = 2000
+        # temporary hardcoded value of the id of the latest xkcd comic, updates initially on bot start, then subsequently
+        # every time the get_latest_xkcd function is called
+        self.mrx: int = 2000
+        self.bot.loop.create_task(self.get_latest_xkcd())
+
+    async def get_latest_xkcd(self):
+        BASE = 'https://xkcd.com/'
+        ROUTE = BASE + 'info.0.json'
+        async with self.bot.cs.get(ROUTE) as r:
+            if r.status != 200:
+                return -1
+            d = await r.json()
+            self.mrx = d.get('num')
+            return d
 
     async def clear_cache_entry(self, entry):
         """
@@ -155,17 +167,14 @@ class Fun(commands.Cog):
         await ctx.send(
             embed=discord.Embed(title=d.get('title'), colour=self.bot.Colour.light_pink()).set_image(url=d.get('img')))
 
-    @xkcd.command()
+    @xkcd.command(aliases=['latest'])
     async def current(self, ctx: commands.Context):
         """
         Sends the current latest xkcd comic.
         """
-        BASE = 'https://xkcd.com/'
-        ROUTE = BASE + 'info.0.json'
-        async with self.bot.cs.get(ROUTE) as r:
-            if r.status != 200:
-                return await ctx.send('Something bad happened')
-            d = await r.json()
+        d = await self.get_latest_xkcd()
+        if d == -1:
+            return await ctx.send('An http error occurred')
         await ctx.send(
             embed=discord.Embed(title=d.get('title'), colour=self.bot.Colour.light_pink()).set_image(url=d.get('img')))
         self.mrx = d.get('num')
