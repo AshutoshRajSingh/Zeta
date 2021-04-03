@@ -1,7 +1,7 @@
 import sys
 import time
+import psutil
 import discord
-import asyncpg
 import datetime
 from main import Zeta
 from discord.ext import commands
@@ -30,15 +30,12 @@ class Misc(commands.Cog):
         Sends info about the bot, you gotta use it to see.
         """
         e = discord.Embed(title=f"{self.bot.user.name}",
-                          description=f"A big dumdum discord bot made by {self.bot.get_user(501451372147769355)}",
+                          description=f"A big dumdum discord bot made by {self.bot.get_user(501451372147769355)}\n\n",
                           colour=discord.Colour.blue())
-
+        mem = psutil.virtual_memory()
         # Calculate uptime
         uptime = datetime.datetime.utcnow() - start
-        hours = int(uptime.seconds / 3600)
-        mins = (uptime.seconds // 60) % 60
-        secs = uptime.seconds - (hours * 3600 + mins * 60)
-        e.add_field(name="Uptime", value=f"{hours}:{mins}:{secs}")
+        e.add_field(name="Uptime", value=f"{str(uptime).split('.')[0]}")
 
         e.add_field(name="Websocket latency", value=f"{int(self.bot.latency * 1000)}ms")
 
@@ -49,10 +46,11 @@ class Misc(commands.Cog):
 
         e.add_field(name="Servers joined", value=str(len(self.bot.guilds)))
         e.add_field(name="Users watched", value=str(len(self.bot.users)))
-        e.add_field(name="Privileged Intents", value=self.get_privileged_intents())
+
         e.add_field(name="Python version", value=f"{sys.version[:5]}")
-        e.add_field(name="discord.py version", value=f"{discord.__version__}")
-        e.add_field(name="asyncpg version", value=f"{asyncpg.__version__}")
+        e.add_field(name="CPU Utilization", value=str(psutil.cpu_percent())+"%")
+        e.add_field(name="Available RAM", value=f"{(mem.available//1024)//1024}MB")
+        e.add_field(name="%age RAM used", value=f"{mem.percent}%")
         await ctx.send(embed=e)
 
     @commands.command()
