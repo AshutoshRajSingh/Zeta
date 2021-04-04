@@ -10,6 +10,7 @@ class Fun(commands.Cog):
     """
     General commands for getting memes, cute animol pics and much more!
     """
+
     def __init__(self, bot: Zeta):
         self.bot = bot
         self._subreddit_cache = {}
@@ -33,8 +34,8 @@ class Fun(commands.Cog):
         """
         Does what it says after a fuse of five minutes
         """
-        await asyncio.sleep(5*60)
-        del(self._subreddit_cache[entry])
+        await asyncio.sleep(5 * 60)
+        del (self._subreddit_cache[entry])
 
     @commands.command(aliases=['r'])
     async def reddit(self, ctx: commands.Context, subreddit: str):
@@ -80,7 +81,16 @@ class Fun(commands.Cog):
                 if selected['data'].get('url_overridden_by_dest') is None:
                     misc_invalid += 1
                     continue
-
+                if selected['data']['over_18']:
+                    nsfw += 1
+                    continue
+                if selected['data']['is_video'] or selected['data']['url_overridden_by_dest'].startswith(
+                        'https://v.redd.it/'):
+                    # To make the command compatible with video posts, here you probably can send the video url in the channel
+                    # embeds do not support videos so I decided to not do this as I wanted video to be in embed too.
+                    # Haven't tried just sending the video url into the channel thought it probably might work.
+                    video += 1
+                    continue
                 # Imgur support, apparently u just need to yeet .jpg at the end and it automatically redirects you.
                 if selected['data']['url_overridden_by_dest'].startswith('https://imgur.com/'):
                     selected['data']['url_overridden_by_dest'] += 'jpg'
@@ -98,13 +108,6 @@ class Fun(commands.Cog):
 
                     await ctx.send(embed=e)
                     return
-                if selected['data']['over_18']:
-                    nsfw += 1
-                if selected['data']['is_video'] or selected['data']['url_overridden_by_dest'].startswith('https://v.redd.it/'):
-                    # To make the command compatible with video posts, here you probably can send the video url in the channel
-                    # embeds do not support videos so I decided to not do this as I wanted video to be in embed too.
-                    # Haven't tried just sending the video url into the channel thought it probably might work.
-                    video += 1
 
             # Send apropriate error message
             if nsfw >= MAX_LOOKUPS:
@@ -121,7 +124,7 @@ class Fun(commands.Cog):
         """
         BASE = 'https://random.dog'
         ROUTE = '/woof.json'
-        async with self.bot.cs.get(BASE+ROUTE) as r:
+        async with self.bot.cs.get(BASE + ROUTE) as r:
             d = await r.json()
 
         e = discord.Embed(title="Random dog",
@@ -159,13 +162,13 @@ class Fun(commands.Cog):
         Has subcommands that provide additional functionality, read up below.
         """
         BASE = 'https://xkcd.com/'
-        ROUTE = BASE+'%d/info.0.json'
+        ROUTE = BASE + '%d/info.0.json'
         async with self.bot.cs.get(ROUTE % ComicId) as r:
             if r.status != 200:
                 return await ctx.send("No xkcd found")
             d = await r.json()
         await ctx.send(
-            embed=discord.Embed(title=d.get('title'), colour=self.bot.Colour.light_pink()).set_image(url=d.get('img')))
+            embed=discord.Embed(title=d.get('title'), colour=self.bot.Colour.light_pink(), url=BASE+str(ComicId)).set_image(url=d.get('img')))
 
     @xkcd.command(aliases=['latest'])
     async def current(self, ctx: commands.Context):
@@ -176,7 +179,7 @@ class Fun(commands.Cog):
         if d == -1:
             return await ctx.send('An http error occurred')
         await ctx.send(
-            embed=discord.Embed(title=d.get('title'), colour=self.bot.Colour.light_pink()).set_image(url=d.get('img')))
+            embed=discord.Embed(title=d.get('title'), colour=self.bot.Colour.light_pink(), url='https://xkcd.com/%d' % d.get('num')).set_image(url=d.get('img')))
         self.mrx = d.get('num')
 
     @xkcd.command()
@@ -185,9 +188,12 @@ class Fun(commands.Cog):
         Sends a random xkcd comic.
         """
         # works cuz stores the number (id) of current latest comic whenever the xkcd latest command is called, then makes
-        # a random choice between 1 and that number to avoid overflow, unfortunately this
+        # a random choice between 1 and that number to avoid overflow.
         return await self.xkcd(ctx, random.randint(1, self.mrx))
 
+    @commands.group(aliases=['dex'])
+    async def pokedex(self, ctx: commands.Context, name: str):
+        raise NotImplementedError()
 
 def setup(bot: Zeta):
     bot.add_cog(Fun(bot))
