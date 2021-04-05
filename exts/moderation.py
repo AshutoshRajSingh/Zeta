@@ -259,5 +259,30 @@ class Moderation(commands.Cog):
         await self.bot.pool.execute("DELETE FROM infractions WHERE guildid = $1 AND memberid = $2", ctx.guild.id, target.id)
         await ctx.send(f"{target}'s infractions were cleared successfully")
 
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def purge(self, ctx: commands.Context, amount: int):
+        """
+        Bulk deletes a set amount of messages
+
+        `amount` is the number of messages you wish to delete (including the command itself)
+        """
+        await ctx.channel.purge(limit=amount+1)
+
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def purgebots(self, ctx: commands.Context, limit: int):
+        """
+        Bulk deletes messages sent by bots
+
+        `limit` is the number of messages you wish to search through, setting it to 50 for example would mean bot searches through last 50 messages sent in the channel and deletes the ones created by bots.
+        """
+        await ctx.channel.purge(limit=limit, check=lambda m: m.author.bot)
+
+    @commands.command(name='user-info', aliases=['userinfo'])
+    @commands.has_guild_permissions(kick_members=True)
+    async def userinfo(self, ctx: commands.Context, target: discord.Member):
+        pass
+
 def setup(bot: Zeta):
     bot.add_cog(Moderation(bot))
