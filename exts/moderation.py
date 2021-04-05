@@ -203,6 +203,61 @@ class Moderation(commands.Cog):
                                                                   entry.get('id'),
                                                                   entry.get('mutedtill')))
 
+    @commands.command()
+    @commands.has_guild_permissions(manage_messages=True)
+    async def warn(self, ctx: commands.Context, target: discord.Member, *, reason: str):
+        """
+        Use to warn a mischievous member.
+
+        `target` here is the member you wish to warn, can be mention, id or username.
+        `reason` here is the reason you wish to warn them for.
+
+        This warning gets added to the member's infractions, use the `infractions` command to learn more.
+        """
+        await self.bot.pool.execute("INSERT INTO infractions (guildid, memberid, reason, time) VALUES ($1, $2, $3, $4)",
+                                    ctx.guild.id, target.id, reason, datetime.datetime.utcnow())
+        await ctx.send(embed=discord.Embed(description=f"{target.mention} was warned", colour=self.bot.Colour.red()))
+
+    @commands.group(invoke_without_command=True, aliases=['infraction'])
+    @commands.has_guild_permissions(manage_messages=True)
+    async def infractions(self, ctx: commands.Context, target: discord.Member):
+        """
+        Used to see a member's infractions
+
+        `target` here is the member whose infractions you wish to see, can be mention, id or username.
+        """
+        async with self.bot.pool.acquire() as conn:
+            async with conn.transaction():
+                embed = discord.Embed(title=f"Infractions for {target}", description="\n\n".join([f"(ID: **{record.get('id')}**), [{record.get('time').strftime('%d/%m/%Y') if record.get('time') else None}]\nReason: {record.get('reason')}" async for record in conn.cursor("SELECT id, reason, time FROM infractions WHERE memberid = $1 AND guildid = $2", target.id, ctx.guild.id)]), colour=discord.Colour.red())
+                if not embed.description:
+                    await ctx.send(f"{target} doesn't have any infractions")
+                else:
+                    await ctx.send(embed=embed)
+
+    @infractions.command()
+    @commands.has_guild_permissions(manage_messages=True)
+    async def delete(self, ctx: commands.Context, infraction_id: int):
+        """
+        Used to delete an infraction given its id.
+
+        `infraction_id` here is the id of the **infraction** you wish to delete, the id of the infraction can be obtained by using the `infractions` command
+        """
+        rc = await self.bot.pool.execute("DELETE FROM infractions WHERE id = $1 AND guildid = $2", infraction_id, ctx.guild.id)
+        if rc != 'DELETE 1':
+            await ctx.send("Couldn't remove infraction, double check the id provided")
+        else:
+            await ctx.send("Infraction deleted successfully!")
+
+    @infractions.command()
+    @commands.has_guild_permissions(manage_messages=True)
+    async def clear(self, ctx: commands.Context, target: discord.Member):
+        """
+        Used to clear all of a member's infractions.
+
+        `target` here is the member whose infractions you wish to clear, can be mention, id or username. Note that this command will remove **all** infractions `target` has.
+        """
+        await self.bot.pool.execute("DELETE FROM infractions WHERE guildid = $1 AND memberid = $2", ctx.guild.id, target.id)
+        await ctx.send(f"{target}'s infractions were cleared successfully")
 
 def setup(bot: Zeta):
     bot.add_cog(Moderation(bot))
