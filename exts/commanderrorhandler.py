@@ -24,9 +24,8 @@ class CommandErrorHandler(commands.Cog):
         # Following block(s) handle general specific errors like missing permissions etc. Any that isn't caught here
         # Is printed in console as a standard exception
         if isinstance(error, commands.BadArgument):
-            title = f"Error in command {ctx.command.name}"
-            description = f"Bad parameter supplied, please use `{ctx.prefix}help {ctx.command.name}` " \
-                          f"to get information about how to use that command"
+            title = f"Error in command {ctx.command}"
+            description = str(error) + f"\nUse `{ctx.prefix}help {ctx.command}` if unsure on using this command."
 
         elif isinstance(error, commands.MissingRequiredArgument):
             description = str(error)
@@ -35,8 +34,7 @@ class CommandErrorHandler(commands.Cog):
             description = str(error)
 
         elif isinstance(error, discord.Forbidden):
-            description = "I can't do that, I may not have permission to do so, please check if my roles and role " \
-                          "permissions are in order"
+            description = "Forbidden"
 
         elif isinstance(error, commands.CheckFailure):
             # Wanna keep these to local error handlers
