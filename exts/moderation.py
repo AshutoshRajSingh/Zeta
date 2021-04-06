@@ -339,5 +339,26 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=e)
 
+    @commands.command()
+    @commands.has_guild_permissions(manage_messages=True)
+    async def viewdeniedoverwrites(self, ctx: commands.Context, channel: Union[discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel]):
+        """
+        Displays a list of all overwrites that have been explicitly set to **Deny**
+
+        `channel` here is the channel you wish to see the explicitly denied overwrites for, can be mention, id, or username.
+        """
+        e = discord.Embed(title=f"Explicitly allowed overwrites for {channel}:", description="",
+                          colour=discord.Colour.red())
+        for k, v in channel.overwrites.items():
+            temp = f"**{str(k)}**" + "\n"
+            for p, val in v:
+                if val is False:
+                    temp += f"`{str(p)}` "
+            if temp == f"**{str(k)}**" + "\n":
+                temp = ""
+            e.description += temp + "\n\n"
+
+        await ctx.send(embed=e)
+
 def setup(bot: Zeta):
     bot.add_cog(Moderation(bot))
