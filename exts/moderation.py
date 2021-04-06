@@ -1,6 +1,7 @@
 import discord
 import datetime
 from main import Zeta
+from typing import Union
 from discord.utils import get
 from discord.ext import commands, tasks
 
