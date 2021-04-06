@@ -284,5 +284,49 @@ class Moderation(commands.Cog):
     async def userinfo(self, ctx: commands.Context, target: discord.Member):
         pass
 
+    @commands.command(enabled=False, hidden=True)
+    @commands.has_guild_permissions(manage_roles=True)
+    async def checkpermission(self, ctx: commands.Context, channel: Union[discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel], permission: str):
+        """
+        Displays channel overwrites for all roles/members that are explicitly set to either Allow or Deny, for a particular channel
+
+        `channel` here is the channel you wish to see overwrites for, can be text channel, voice channel or category, preferably id for the last two types
+        `permission` here is the overwrite you wish to view.
+
+        For example, using the command:
+        `checkpermision general manage_messages`
+        would give a list of all the members/roles that have the permission `manage_messages` in the channel `general`
+        """
+        if not getattr(discord.Permissions, permission, False):
+            # Some work to be done on this part
+            valid_perms = "\n".join([p for p in dir(discord.PermissionOverwrite) if not p.startswith('_') and p not in ['PURE_FLAGS', 'VALID_NAMES']])
+            return await ctx.send("Invalid permission entered, here's a list of valid permission types: "+"\n"+"```"+valid_perms+"```")
+        e = discord.Embed(title=f"Members/Roles with {permission} permission in {channel}:",
+                          description="  ".join([t.mention if getattr(ow, permission) is True else "" for t, ow in channel.overwrites.items()]),
+                          colour=discord.Colour.dark_blue())
+        if not e.description.strip():
+            return await ctx.send(f"No roles/members have the overwrite {permission} explicitly set to **Allow** in {channel}")
+        await ctx.send(embed=e)
+
+    @commands.command()
+    @commands.has_guild_permissions(manage_guild=True)
+    async def viewallowedoverwrites(self, ctx: commands.Context, channel: Union[discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel]):
+        """
+        Displays a list of all overwrites that have been explicitly set to Allow
+
+        `channel` here is the channel you wish to see the explicitly allowed overwrites for, can be mention, id, or username.
+        """
+        e = discord.Embed(title=f"Explicitly allowed overwrites for {channel}:", description="", colour=discord.Colour.red())
+        for k, v in channel.overwrites.items():
+            temp = f"**{str(k)}**" + "\n"
+            for p, val in v:
+                if val is True:
+                    temp += f"`{str(p)}` "
+            if temp == f"**{str(k)}**" + "\n":
+                temp = ""
+            e.description += temp + "\n\n"
+
+        await ctx.send(embed=e)
+
 def setup(bot: Zeta):
     bot.add_cog(Moderation(bot))
