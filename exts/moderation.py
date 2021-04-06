@@ -285,7 +285,7 @@ class Moderation(commands.Cog):
     async def userinfo(self, ctx: commands.Context, target: discord.Member):
         pass
 
-    @commands.command(enabled=False, hidden=True)
+    @commands.command()
     @commands.has_guild_permissions(manage_roles=True)
     async def checkpermission(self, ctx: commands.Context, channel: Union[discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel], permission: str):
         """
@@ -298,12 +298,22 @@ class Moderation(commands.Cog):
         `checkpermision general manage_messages`
         would give a list of all the members/roles that have the permission `manage_messages` in the channel `general`
         """
-        if not getattr(discord.Permissions, permission, False):
-            # Some work to be done on this part
-            valid_perms = "\n".join([p for p in dir(discord.PermissionOverwrite) if not p.startswith('_') and p not in ['PURE_FLAGS', 'VALID_NAMES']])
-            return await ctx.send("Invalid permission entered, here's a list of valid permission types: "+"\n"+"```"+valid_perms+"```")
+        permission = permission.lower()
+        guildperms = [str(p) for p, val in discord.Permissions.all_channel() if val is False]
+        ignoredattrs = [
+                           'PURE_FLAGS',
+                           'VALID_NAMES',
+                           'is_empty',
+                           'pair',
+                       ] + guildperms
+        valid_perms = "  ".join([f'`{str(p)}`' for p in dir(discord.PermissionOverwrite) if
+                                 not p.startswith('_') and str(p) not in ignoredattrs])
+
+        if permission not in valid_perms or permission not in dir(discord.Permissions):
+            return await ctx.send("Invalid permission entered, here's an alphabetical list of valid permission types: "+"\n"+valid_perms)
+
         e = discord.Embed(title=f"Members/Roles with {permission} permission in {channel}:",
-                          description="  ".join([t.mention if getattr(ow, permission) is True else "" for t, ow in channel.overwrites.items()]),
+                          description=" ".join([t.mention if getattr(ow, permission) is True else "" for t, ow in channel.overwrites.items()]),
                           colour=discord.Colour.dark_blue())
         if not e.description.strip():
             return await ctx.send(f"No roles/members have the overwrite {permission} explicitly set to **Allow** in {channel}")
