@@ -330,10 +330,10 @@ class Moderation(commands.Cog):
         await ctx.send(embed=e)
 
     @commands.command()
-    @commands.has_guild_permissions(manage_guild=True)
+    @commands.has_guild_permissions(manage_messages=True)
     async def viewallowedoverwrites(self, ctx: commands.Context, channel: Union[discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel]):
         """
-        Displays a list of all overwrites that have been explicitly set to Allow
+        Displays a list of all overwrites that have been explicitly set to **Allow**
 
         `channel` here is the channel you wish to see the explicitly allowed overwrites for, can be mention, id, or username.
         """
