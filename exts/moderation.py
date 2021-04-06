@@ -283,7 +283,17 @@ class Moderation(commands.Cog):
     @commands.command(name='user-info', aliases=['userinfo'])
     @commands.has_guild_permissions(kick_members=True)
     async def userinfo(self, ctx: commands.Context, target: discord.Member):
-        pass
+        """
+        View information about a user, their permissions, etc.
+        """
+        e = discord.Embed(title=f"Info for user: {target}", colour=discord.Colour.red())
+        e.add_field(name=f"Roles", value=" ".join([str(r) for r in target.roles]))
+        e.add_field(name="Joined at", value=target.joined_at.strftime('%d %B %Y'))
+        e.add_field(name='User ID', value=str(target.id))
+        infcount = (await self.bot.pool.fetchrow('SELECT COUNT(*) FROM infractions WHERE guildid = $1 AND memberid = $2', ctx.guild.id, target.id)).get('count')
+        e.add_field(name="Server infractions", value=f"{infcount} total")
+        e.add_field(name='Permissions', value=" ".join([f"`{str(p)}`" for p, val in target.guild_permissions if val is True]), inline=False)
+        await ctx.send(embed=e)
 
     @commands.command()
     @commands.has_guild_permissions(manage_roles=True)
