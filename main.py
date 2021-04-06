@@ -9,7 +9,7 @@ import traceback
 from discord.ext import commands
 
 
-class Zeta(commands.Bot):
+class Zeta(commands.AutoShardedBot):
     def __init__(self, **kwargs):
         super().__init__(command_prefix=self.get_pre, intents=discord.Intents.all(), **kwargs)
         print(f"All dates/time are in UTC unless stated otherwise\n"
