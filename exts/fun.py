@@ -191,7 +191,7 @@ class Fun(commands.Cog):
         # a random choice between 1 and that number to avoid overflow.
         return await self.xkcd(ctx, random.randint(1, self.mrx))
 
-    @commands.group(aliases=['dex'])
+    @commands.group(aliases=['dex'], hidden=True, enabled=False)
     async def pokedex(self, ctx: commands.Context, name: str):
         raise NotImplementedError()
 
