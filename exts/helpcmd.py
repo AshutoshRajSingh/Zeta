@@ -2,6 +2,9 @@ import discord
 from discord.ext import commands, menus
 
 class bothelp(menus.Menu):
+    """
+    Menu for bot help
+    """
     def __init__(self, mapping: dict, prefix):
         self.clean_prefix = prefix
         self.embeddesc = f"Use {self.clean_prefix}help [command] for more info on a command.\nYou can also use {self.clean_prefix}help [category] for more info on a category."
@@ -13,9 +16,15 @@ class bothelp(menus.Menu):
         super().__init__()
 
     def get_next_page(self):
+        """
+        Returns next page based off the current page, a "page" is nothing but a list of dicts with cog name mapped to commands
+        """
         return self.coglist[3*self.current_page: 3*(self.current_page+1)]
 
     def listinate(self):
+        """
+        Takes the mapping of commands recieved and yoinks them into a list.
+        """
         for cog, cmds in self.mapping.items():
             try:
                 if len(cog.get_commands()) == 0:
@@ -40,6 +49,9 @@ class bothelp(menus.Menu):
 
     @menus.button("\U000025c0")
     async def backward(self, payload):
+        """
+        Two steps back and one step forward, ig that counts
+        """
         self.current_page -= 2
         if self.current_page < 0:
             self.current_page = 1
@@ -48,11 +60,17 @@ class bothelp(menus.Menu):
 
     @menus.button("\U000023f9")
     async def stopme(self, payload):
+        """
+        Stops menu
+        """
         await self.message.delete()
         await self.stop()
 
     @menus.button("\U000025b6")
     async def forward(self, payload):
+        """
+        One page forward.
+        """
         current = self.get_next_page()
         if not current:
             return
@@ -62,9 +80,13 @@ class bothelp(menus.Menu):
         for item in current:
             for cog, cmds in item.items():
                 if type(cog) is str:
-                    e.add_field(name=cog, value=" ".join([f"`{cmd.name}`" for cmd in cmds]), inline=False)
+                    e.add_field(name=cog,
+                                value=" ".join([f"`{cmd.name}`" for cmd in cmds]),
+                                inline=False)
                 else:
-                    e.add_field(name=cog.qualified_name, value=" ".join([f"`{cmd.name}`" for cmd in cmds]), inline=False)
+                    e.add_field(name=cog.qualified_name,
+                                value=" ".join([f"`{cmd.name}`" for cmd in cmds]),
+                                inline=False)
         await self.message.edit(embed=e)
         self.current_page += 1
 
