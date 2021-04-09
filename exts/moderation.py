@@ -299,7 +299,7 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(manage_roles=True)
     async def checkpermission(self, ctx: commands.Context, channel: Union[discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel], permission: str):
         """
-        Displays channel overwrites for all roles/members that are explicitly set to either Allow or Deny, for a particular channel
+        Displays a channel overwrite for all roles/members that is explicitly set to either Allow or Deny, for a particular channel
 
         `channel` here is the channel you wish to see overwrites for, can be text channel, voice channel or category, preferably id for the last two types
         `permission` here is the overwrite you wish to view.
