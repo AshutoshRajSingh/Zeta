@@ -2,10 +2,10 @@ import discord
 from discord.ext import commands, menus
 
 class bothelp(menus.Menu):
-    """
-    I wrote this shit and have absolutely no idea why it works but since it does I've decided to not touch it
-    """
-    def __init__(self, mapping: dict):
+    def __init__(self, mapping: dict, prefix):
+        self.clean_prefix = prefix
+        self.embeddesc = f"Use {self.clean_prefix}help [command] for more info on a command.\nYou can also use {self.clean_prefix}help [category] for more info on a category."
+        self.baseembed = discord.Embed(title="Commands", description=self.embeddesc, colour=discord.Colour.purple())
         self.mapping = mapping
         self.coglist = []
         self.current_page = 1
@@ -21,7 +21,7 @@ class bothelp(menus.Menu):
                 if len(cog.get_commands()) == 0:
                     continue
                 if cog.qualified_name.lower() == 'jishaku':
-                    pass
+                    continue
             except AttributeError:
                 self.coglist.append({"Other": cmds})
                 continue
@@ -29,13 +29,13 @@ class bothelp(menus.Menu):
 
     async def send_initial_message(self, ctx, channel):
         current = self.coglist[0:3]
-        e = discord.Embed(title="cmds", colour=discord.Colour.purple())
+        e = self.baseembed
         for item in current:
             for cog, cmds in item.items():
                 if type(cog) is str:
-                    e.add_field(name=cog, value=" ".join([f"`{cmd.name}`" for cmd in cmds]))
+                    e.add_field(name=cog, value=" ".join([f"`{cmd.name}`" for cmd in cmds]), inline=False)
                 else:
-                    e.add_field(name=cog.qualified_name, value=" ".join([f"`{cmd.name}`" for cmd in cmds]))
+                    e.add_field(name=cog.qualified_name, value=" ".join([f"`{cmd.name}`" for cmd in cmds]), inline=False)
         return await channel.send(embed=e)
 
     @menus.button("\U000025c0")
@@ -56,13 +56,15 @@ class bothelp(menus.Menu):
         current = self.get_next_page()
         if not current:
             return
-        e = discord.Embed(title="cmds", colour=discord.Colour.purple())
+
+        e = self.baseembed
+        e.clear_fields()
         for item in current:
             for cog, cmds in item.items():
                 if type(cog) is str:
-                    e.add_field(name=cog, value=" ".join([f"`{cmd.name}`" for cmd in cmds]))
+                    e.add_field(name=cog, value=" ".join([f"`{cmd.name}`" for cmd in cmds]), inline=False)
                 else:
-                    e.add_field(name=cog.qualified_name, value=" ".join([f"`{cmd.name}`" for cmd in cmds]))
+                    e.add_field(name=cog.qualified_name, value=" ".join([f"`{cmd.name}`" for cmd in cmds]), inline=False)
         await self.message.edit(embed=e)
         self.current_page += 1
 
@@ -76,25 +78,8 @@ class MyHelp(commands.MinimalHelpCommand):
         return f"`{command.qualified_name}`"
 
     async def send_bot_help(self, mapping):
-        m = bothelp(mapping)
+        m = bothelp(mapping, self.clean_prefix)
         await m.start(self.context)
-        embed = discord.Embed(title="Commands",
-                              description=f"Use {self.clean_prefix}help [command] for more info on a command.\nYou can also use {self.clean_prefix}help [category] for more info on a category.",
-                              colour=discord.Colour.purple())
-        for cog, _commands in mapping.items():
-            try:
-                if cog.qualified_name == 'Jishaku':
-                    continue
-            except AttributeError:
-                pass
-            filtered = await self.filter_commands(_commands, sort=True)
-            command_signatures = [self._get_command_signature(c) for c in filtered]
-            if command_signatures:
-                cog_name = getattr(cog, "qualified_name", "Other")
-                embed.add_field(name=cog_name, value=", ".join(command_signatures))
-
-        channel = self.get_destination()
-        await channel.send(embed=embed)
 
     async def send_command_help(self, command):
         embed = discord.Embed(title="Command: " + command.qualified_name,
