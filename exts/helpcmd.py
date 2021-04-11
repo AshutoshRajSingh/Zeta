@@ -101,3 +101,4 @@ Note that subcommands are not displayed here, use {ctx.prefix}help [category] to
     await ctx.send(embed=e)
 def setup(bot: commands.Bot):
     bot.help_command = MyHelp()
+    bot.add_command(_list)
