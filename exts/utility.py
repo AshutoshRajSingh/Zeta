@@ -41,6 +41,9 @@ def generate_plot(x, y):
 
 
 class Utility(commands.Cog, name="Utility"):
+    """
+    Commands for general utility like tagging text etc.
+    """
     def __init__(self, bot: Zeta):
         self.bot = bot
 

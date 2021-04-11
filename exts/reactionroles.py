@@ -6,6 +6,9 @@ from discord.ext.commands import TextChannelConverter, RoleConverter
 
 
 class ReactionRoles(commands.Cog, name="Reaction roles"):
+    """
+    Commands to create and edit "reaction roles" menus.
+    """
     def __init__(self, bot: Zeta):
         self.bot = bot
         self._cache = {}
