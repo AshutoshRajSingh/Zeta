@@ -79,6 +79,25 @@ class MyHelp(commands.MinimalHelpCommand):
         chan = self.get_destination()
         await chan.send(embed=e)
 
-
+@commands.command(name='list')
+async def _list(ctx: commands.Context):
+    ignored_cogs = ['jishaku']
+    e = discord.Embed(title="Command list", colour=0xFFB6C1)
+    e.description = f"""
+```
+Note that subcommands are not displayed here, use {ctx.prefix}help [category] to list all commands and subcommands in a category
+```
+    Use {ctx.prefix}help [category] for more info on a category
+    You can also use {ctx.prefix}help [command] to get detailed info on a command.
+    """
+    coglist = list(sorted(ctx.bot.cogs.values(), key=lambda c: len(str(c.get_commands()))))
+    for cog in coglist:
+        if cog is not None:
+            if len(cog.get_commands()) == 0 or cog.qualified_name.lower() in ignored_cogs:
+                continue
+            e.add_field(name=cog.qualified_name,
+                        value=" ".join([f"`{cmd.name}`" for cmd in cog.get_commands() if cmd.hidden is False]),
+                        inline=False)
+    await ctx.send(embed=e)
 def setup(bot: commands.Bot):
     bot.help_command = MyHelp()
