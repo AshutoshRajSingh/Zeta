@@ -54,11 +54,16 @@ class MyHelp(commands.MinimalHelpCommand):
         await channel.send(embed=embed)
 
     async def send_cog_help(self, cog):
-
+        desc = ""
         cmds = cog.get_commands()
-        desc = "\n".join([f"`{cmd.name}` - {cmd.help.splitlines()[0]}" for cmd in cmds if cmd.hidden is False])
+        for cmd in cmds:
+            if cmd.hidden is False:
+                desc += f"`{self.clean_prefix}{cmd.name}` - {cmd.help.splitlines()[0]}\n"
+                if isinstance(cmd, commands.Group):
+                    desc += f"\n".join([f"`{self.clean_prefix}{cmd.name} {subc.name}` - {subc.help.splitlines()[0]}" for subc in cmd.commands]) + "\n"
+
         e = discord.Embed(title=f"{cog.qualified_name}",
-                          description=cog.description + "\n\n" + f"Use {self.clean_prefix}help [command] for more info on a command.\nYou can also use {self.clean_prefix}help [category] for more info on a category." + "\n\n" + "**Commands:**\n\n" + desc,
+                          description=cog.description + "\n\n" + f"Use {self.clean_prefix}help [command] for more info on a command.\n\n" + desc,
                           colour=discord.Colour.purple())
         chan = self.get_destination()
         await chan.send(embed=e)
