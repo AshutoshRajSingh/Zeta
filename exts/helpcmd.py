@@ -76,6 +76,8 @@ class MyHelp(commands.MinimalHelpCommand):
         e = discord.Embed(title=f"Command: {group.qualified_name}",
                           description=desc + "\n" + subcmds,
                           colour=discord.Colour.purple())
+        if group.aliases:
+            e.add_field(name="Aliases", value=", ".join(group.aliases))
         chan = self.get_destination()
         await chan.send(embed=e)
 
