@@ -298,7 +298,7 @@ class Fun(commands.Cog):
             e.add_field(name=stat['stat']['name'].capitalize(), value=stat['base_stat'])
         await ctx.send(embed=e)
 
-    @pokedex.command(hidden=True)
+    @pokedex.command()
     async def evolution(self, ctx: commands.Context, *, name: str):
         """
         Shows the evolution stages of a pokemon
