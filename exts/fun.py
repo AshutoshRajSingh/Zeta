@@ -2,6 +2,7 @@ import time
 import random
 import discord
 import asyncio
+from treelib import Tree
 from main import Zeta
 from discord.ext import commands
 
@@ -19,6 +20,9 @@ class Fun(commands.Cog):
         # every time the get_latest_xkcd function is called
         self.mrx: int = 2000
         self.bot.loop.create_task(self.get_latest_xkcd())
+
+        # Cache requests to the poke api
+        self.pokemon_cache = {}
 
     async def get_latest_xkcd(self):
         BASE = 'https://xkcd.com/'
@@ -191,9 +195,112 @@ class Fun(commands.Cog):
         # a random choice between 1 and that number to avoid overflow.
         return await self.xkcd(ctx, random.randint(1, self.mrx))
 
-    @commands.group(aliases=['dex'], hidden=True, enabled=False)
-    async def pokedex(self, ctx: commands.Context, name: str):
-        raise NotImplementedError()
+    async def cache_pokemon(self, name: str):
+        ROUTE = "https://pokeapi.co/api/v2/pokemon/%s" % name.lower()
+
+        if name.lower() not in self.pokemon_cache:
+            async with self.bot.cs.get(ROUTE) as r:
+                if r.status == 200:
+                    d = await r.json()
+                else:
+                    return -1
+            async with self.bot.cs.get(d['species'].get('url')) as sr:
+                if sr.status == 200:
+                    sd = await sr.json()
+                else:
+                    return -1
+            # async with self.bot.cs.get(sd['evolution']['url']) as er:
+            #     if er.status == 200:
+            #         ed = await r.json()
+            #     else:
+            #         return -1
+            self.pokemon_cache[name.lower()] = {
+                'id': d['id'],
+                'abilities': d['abilities'],
+                'official-artwork': d['sprites']['other']['official-artwork']['front_default'],
+                'type': [_type["genus"] for _type in sd['genera'] if _type['language']['name'] == 'en'],
+                'types': d['types'],
+                'moves': [entry['move']['name'] for entry in d['moves'] if entry.get('move')],
+                'desc': [entry['flavor_text'] for entry in sd['flavor_text_entries'] if
+                         entry['language']['name'] == 'en'],
+                'evolves_from': f"{sd['evolves_from_species']['name'] if sd.get('evolves_from_species') else None}",
+                'base_stats': d['stats'],
+                'is_legendary': sd['is_legendary'],
+                'is_mythical': sd['is_mythical'],
+                'growth_rate': sd['growth_rate']['name'],
+                # 'evolution_chain': ed['chain']
+            }
+        return self.pokemon_cache[name.lower()]
+
+    @staticmethod
+    def parse_pokemon_name(name: str):
+        # Makes a space separated name hypen separated
+        name = name.lower().strip()
+        words = [word.strip() for word in name.split(' ') if word.strip()]
+
+        # Convert a name like "mega charizard x" to "charizard mega x" so its pokeapi friendly
+        if name.startswith('mega'):
+            words[0], words[1] = words[1], words[0]
+        else:
+            pass
+        return '-'.join(words)
+
+    @commands.group(aliases=['dex'], invoke_without_command=True)
+    async def pokedex(self, ctx: commands.Context, *, name: str):
+        """
+        Shows information about a pokemon
+
+        `name` here is the name of the pokemon you wish to view.
+        """
+        temp = await self.cache_pokemon(self.parse_pokemon_name(name))
+        if temp == -1:
+            return await ctx.send("No pokemon found")
+
+        e = discord.Embed(title=f"{name.capitalize()}", description="", colour=discord.Colour.random())
+        e.set_image(url=temp.get('official-artwork'))
+        e.add_field(name="ID", value=temp.get('id'))
+        e.add_field(name="Abilities", value=f", ".join([entry['ability']['name'] for entry in temp['abilities'] if entry.get('ability')]))
+        e.add_field(name="Types", value=", ".join([_type['type']['name'] for _type in temp['types']]))
+        e.add_field(name="Evolves from", value=f"{temp.get('evolves_from') if temp.get('evolves_from') else 'None'}")
+        e.add_field(name="Growth rate", value=temp['growth_rate'])
+
+        # Mutually exclusive, at least I think.
+        # Also WET, might refactor might not idk.
+        if temp['is_mythical']:
+            e.add_field(name="Special", value="Mythical pokemon")
+        if temp['is_legendary']:
+            e.add_field(name="Special", value="Legendary pokemon")
+
+        # The raw descriptions provided by api have random linebreaks.
+        e.description = " ".join((random.choice(temp['desc']).split("\n")))
+        await ctx.send(embed=e)
+
+    @pokedex.command()
+    async def combat(self, ctx: commands.Context, *, name: str):
+        """
+        Displays a pokemon's combat information
+
+        `name` is the name of the pokemon whose combat info you wish to view.
+        """
+        e = discord.Embed(title=f"{name.capitalize()} combat info",
+                          description="**Moves**\n\n",
+                          colour=discord.Colour.random())
+
+        temp = await self.cache_pokemon(self.parse_pokemon_name(name))
+
+        if temp == -1:
+            return await ctx.send("No pokemon found")
+
+        e.description += ", ".join(temp.get('moves'))
+        e.set_thumbnail(url=temp.get('official-artwork'))
+        e.description += "\n\n**Base stats:**\n"
+        for stat in temp['base_stats']:
+            e.add_field(name=stat['stat']['name'].capitalize(), value=stat['base_stat'])
+        await ctx.send(embed=e)
+
+    @pokedex.command()
+    async def evolution(self, ctx: commands.Context, name: str):
+        e = discord.Embed()
 
 def setup(bot: Zeta):
     bot.add_cog(Fun(bot))
