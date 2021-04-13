@@ -3,6 +3,7 @@ import random
 import discord
 import asyncio
 import rapidfuzz
+from typing import Union
 from treelib import Tree
 from main import Zeta
 from discord.ext import commands
@@ -205,15 +206,36 @@ class Fun(commands.Cog):
         # a random choice between 1 and that number to avoid overflow.
         return await self.xkcd(ctx, random.randint(1, self.mrx))
 
-    async def cache_pokemon(self, name: str):
-        ROUTE = "https://pokeapi.co/api/v2/pokemon/%s" % name.lower()
+    async def cache_pokemon(self, name: Union[str, tuple]) -> Union[list, dict, int]:
+        """
+        Checks if a pokemon is in cache, if it is not, caches it.
+
+        Takes in a single argument name which can either be a string of a pokemon name or a tuple of the format:
+        (name, [<list of probable names>])
+        if argument is string it just uses it, if it is this kind of tuple, then name is the first element of said tuple
+
+        Returns:
+            dict: pokemon data if the pokemon was found in cache or was successfully fetched from api
+            list: if fetching pokemon data from api failed because invalid pokemon name, and the tuple was supplied, the returned value is the second element of the tuple ie the list of probable names
+            int: returns -1 if string was supplied and an attempt to fetch failed
+        """
+        guesslist = []
+        if type(name) is str:
+            pass
+        elif type(name) is tuple:
+            guesslist = name[1]
+            name = name[0]
 
         if name.lower() not in self.pokemon_cache:
+            ROUTE = "https://pokeapi.co/api/v2/pokemon/%s" % name.lower()
             async with self.bot.cs.get(ROUTE) as r:
                 if r.status == 200:
                     d = await r.json()
                 else:
-                    return -1
+                    if guesslist:
+                        return guesslist
+                    else:
+                        return -1
             async with self.bot.cs.get(d['species'].get('url')) as sr:
                 if sr.status == 200:
                     sd = await sr.json()
@@ -252,6 +274,7 @@ class Fun(commands.Cog):
 
     def fuzzsearch(self, query):
         retdict = {}
+        retlist = []
         if query in self.pokedata:
             return query
         for elem in self.pokedata:
@@ -261,14 +284,18 @@ class Fun(commands.Cog):
                 ratio = rapidfuzz.fuzz.token_sort_ratio(elem, query)
             if ratio >= 80:
                 retdict[elem] = ratio
+            elif 50 < ratio < 80:
+                retlist.append(elem)
         _max = 0
         max_name = query
         for k, v in retdict.items():
             if v > _max:
                 _max = v
                 max_name = k
-
-        return max_name
+        if retdict:
+            return max_name
+        else:
+            return max_name, sorted(retlist)
 
     @commands.group(aliases=['dex'], invoke_without_command=True)
     async def pokedex(self, ctx: commands.Context, *, name: str):
@@ -280,6 +307,8 @@ class Fun(commands.Cog):
         temp = await self.cache_pokemon(self.parse_pokemon_name(name))
         if temp == -1:
             return await ctx.send("No pokemon found")
+        if type(temp) is list:
+            return await ctx.send(f"Pokemon not found, perhaps you meant one of these: \n{', '.join([entry for entry in temp])}")
 
         e = discord.Embed(title=f"{temp['name'].capitalize()}", description="", colour=discord.Colour.random())
         e.set_image(url=temp.get('official-artwork'))
@@ -308,12 +337,14 @@ class Fun(commands.Cog):
         `name` is the name of the pokemon whose combat info you wish to view.
         """
         temp = await self.cache_pokemon(self.parse_pokemon_name(name))
+        if temp == -1:
+            return await ctx.send("No pokemon found")
+        if type(temp) is list:
+            return await ctx.send(f"Pokemon not found, perhaps you meant one of these: \n{', '.join([entry for entry in temp])}")
+
         e = discord.Embed(title=f"{temp['name'].capitalize()} combat info",
                           description="**Moves**\n\n",
                           colour=discord.Colour.random())
-        if temp == -1:
-            return await ctx.send("No pokemon found")
-
         e.description += ", ".join(temp.get('moves'))
         e.set_thumbnail(url=temp.get('official-artwork'))
         e.description += "\n\n**Base stats:**\n"
@@ -332,7 +363,8 @@ class Fun(commands.Cog):
         _temp = await self.cache_pokemon(self.parse_pokemon_name(name))
         if _temp == -1:
             return await ctx.send('No pokemon found')
-
+        if type(_temp) is list:
+            return await ctx.send(f"Pokemon not found, perhaps you meant one of these: \n{', '.join([entry for entry in _temp])}")
         d = _temp['evolution_chain']
         temp = d['evolves_to']
 
