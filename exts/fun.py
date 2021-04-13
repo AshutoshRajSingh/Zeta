@@ -209,11 +209,11 @@ class Fun(commands.Cog):
                     sd = await sr.json()
                 else:
                     return -1
-            # async with self.bot.cs.get(sd['evolution']['url']) as er:
-            #     if er.status == 200:
-            #         ed = await r.json()
-            #     else:
-            #         return -1
+            async with self.bot.cs.get(sd['evolution_chain']['url']) as er:
+                if er.status == 200:
+                    ed = await er.json()
+                else:
+                    return -1
             self.pokemon_cache[name.lower()] = {
                 'id': d['id'],
                 'abilities': d['abilities'],
@@ -228,7 +228,7 @@ class Fun(commands.Cog):
                 'is_legendary': sd['is_legendary'],
                 'is_mythical': sd['is_mythical'],
                 'growth_rate': sd['growth_rate']['name'],
-                # 'evolution_chain': ed['chain']
+                'evolution_chain': ed['chain']
             }
         return self.pokemon_cache[name.lower()]
 
@@ -298,9 +298,36 @@ class Fun(commands.Cog):
             e.add_field(name=stat['stat']['name'].capitalize(), value=stat['base_stat'])
         await ctx.send(embed=e)
 
-    @pokedex.command(hidden=True, enabled=False)
-    async def evolution(self, ctx: commands.Context, name: str):
-        raise NotImplementedError()
+    @pokedex.command(hidden=True)
+    async def evolution(self, ctx: commands.Context, *, name: str):
+        """
+        Shows the evolution stages of a pokemon
+
+        `name` here is the name of the pokeomn whose evolution you wish to view
+        """
+        # Naming is a nightmare ok don't judge
+        _temp = await self.cache_pokemon(self.parse_pokemon_name(name))
+        if _temp == -1:
+            return await ctx.send('No pokemon found')
+        d = _temp['evolution_chain']
+        temp = d['evolves_to']
+
+        # Initialising the tree
+        tree = Tree()
+        tree.create_node(d['species']['name'], d['species']['name'])
+
+        # Recursively iterates over pokemon evolution stages and makes an entry into the tree
+        def traverse(chain, parent=None):
+            for pokemon in chain:
+                tree.create_node(pokemon['species']['name'], pokemon['species']['name'], parent=parent)
+                traverse(pokemon['evolves_to'], parent=pokemon['species']['name'])
+        traverse(temp, parent=d['species']['name'])
+
+        e = discord.Embed(title=f"Evolution detail for {name}",
+                          description=f"```\n{tree}```",
+                          colour=discord.Colour.random())
+        e.set_thumbnail(url=_temp['official-artwork'])
+        await ctx.send(embed=e)
 
 def setup(bot: Zeta):
     bot.add_cog(Fun(bot))
