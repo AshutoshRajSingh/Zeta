@@ -298,9 +298,9 @@ class Fun(commands.Cog):
             e.add_field(name=stat['stat']['name'].capitalize(), value=stat['base_stat'])
         await ctx.send(embed=e)
 
-    @pokedex.command()
+    @pokedex.command(hidden=True, enabled=False)
     async def evolution(self, ctx: commands.Context, name: str):
-        e = discord.Embed()
+        raise NotImplementedError()
 
 def setup(bot: Zeta):
     bot.add_cog(Fun(bot))
