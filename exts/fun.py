@@ -2,6 +2,7 @@ import time
 import random
 import discord
 import asyncio
+import rapidfuzz
 from treelib import Tree
 from main import Zeta
 from discord.ext import commands
@@ -23,6 +24,15 @@ class Fun(commands.Cog):
 
         # Cache requests to the poke api
         self.pokemon_cache = {}
+
+        self.pokedata = set()
+        self.bot.loop.create_task(self.get_pokemon())
+
+    async def get_pokemon(self):
+        async with self.bot.cs.get('https://pokeapi.co/api/v2/pokemon?limit=65535') as r:
+            if r.status == 200:
+                d = await r.json()
+                self.pokedata = {entry['name'] for entry in d['results']}
 
     async def get_latest_xkcd(self):
         BASE = 'https://xkcd.com/'
@@ -216,6 +226,7 @@ class Fun(commands.Cog):
                     return -1
             self.pokemon_cache[name.lower()] = {
                 'id': d['id'],
+                'name': d['name'],
                 'abilities': d['abilities'],
                 'official-artwork': d['sprites']['other']['official-artwork']['front_default'],
                 'type': [_type["genus"] for _type in sd['genera'] if _type['language']['name'] == 'en'],
@@ -232,18 +243,32 @@ class Fun(commands.Cog):
             }
         return self.pokemon_cache[name.lower()]
 
-    @staticmethod
-    def parse_pokemon_name(name: str):
+    def parse_pokemon_name(self, name: str):
         # Makes a space separated name hypen separated
         name = name.lower().strip()
         words = [word.strip() for word in name.split(' ') if word.strip()]
 
-        # Convert a name like "mega charizard x" to "charizard mega x" so its pokeapi friendly
-        if name.startswith('mega'):
-            words[0], words[1] = words[1], words[0]
-        else:
-            pass
-        return '-'.join(words)
+        return self.fuzzsearch('-'.join(words))
+
+    def fuzzsearch(self, query):
+        retdict = {}
+        if query in self.pokedata:
+            return query
+        for elem in self.pokedata:
+            if len(query.split('-')) == 1:
+                ratio = rapidfuzz.fuzz.ratio(elem, query)
+            else:
+                ratio = rapidfuzz.fuzz.token_sort_ratio(elem, query)
+            if ratio >= 80:
+                retdict[elem] = ratio
+        _max = 0
+        max_name = query
+        for k, v in retdict.items():
+            if v > _max:
+                _max = v
+                max_name = k
+
+        return max_name
 
     @commands.group(aliases=['dex'], invoke_without_command=True)
     async def pokedex(self, ctx: commands.Context, *, name: str):
@@ -256,7 +281,7 @@ class Fun(commands.Cog):
         if temp == -1:
             return await ctx.send("No pokemon found")
 
-        e = discord.Embed(title=f"{name.capitalize()}", description="", colour=discord.Colour.random())
+        e = discord.Embed(title=f"{temp['name'].capitalize()}", description="", colour=discord.Colour.random())
         e.set_image(url=temp.get('official-artwork'))
         e.add_field(name="ID", value=temp.get('id'))
         e.add_field(name="Abilities", value=f", ".join([entry['ability']['name'] for entry in temp['abilities'] if entry.get('ability')]))
@@ -282,12 +307,10 @@ class Fun(commands.Cog):
 
         `name` is the name of the pokemon whose combat info you wish to view.
         """
-        e = discord.Embed(title=f"{name.capitalize()} combat info",
+        temp = await self.cache_pokemon(self.parse_pokemon_name(name))
+        e = discord.Embed(title=f"{temp['name'].capitalize()} combat info",
                           description="**Moves**\n\n",
                           colour=discord.Colour.random())
-
-        temp = await self.cache_pokemon(self.parse_pokemon_name(name))
-
         if temp == -1:
             return await ctx.send("No pokemon found")
 
@@ -309,6 +332,7 @@ class Fun(commands.Cog):
         _temp = await self.cache_pokemon(self.parse_pokemon_name(name))
         if _temp == -1:
             return await ctx.send('No pokemon found')
+
         d = _temp['evolution_chain']
         temp = d['evolves_to']
 
@@ -323,7 +347,7 @@ class Fun(commands.Cog):
                 traverse(pokemon['evolves_to'], parent=pokemon['species']['name'])
         traverse(temp, parent=d['species']['name'])
 
-        e = discord.Embed(title=f"Evolution detail for {name}",
+        e = discord.Embed(title=f"Evolution detail for {_temp['name']}",
                           description=f"```\n{tree}```",
                           colour=discord.Colour.random())
         e.set_thumbnail(url=_temp['official-artwork'])
