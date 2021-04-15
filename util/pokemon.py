@@ -362,10 +362,29 @@ class Client:
                     self.type_cache[name.lower()] = PokemonType(d)
         return self.type_cache.get(name.lower())
 
-    async def fetch_move(self, name):
-        raise NotImplementedError()
+    async def fetch_pokemon_move(self, name: str, *, chunk=True) -> Optional[PokemonMove]:
+        """
+        Fetches a PokemonMove or None, works by looking up cache and making api call if couldn't find in cache
 
-    async def fetch_ability(self, name):
+        Parameters:
+            name: str
+                The name of the pokemon move to fetch
+            chunk: bool
+                Whether or not to chunk type, defaults to True, if set to false, move will have the type attribute set to None
+        Returns:
+            Optional[PokemonMove]
+        """
+        if name.lower() not in self.move_cache:
+            async with self.session.get("https://pokeapi.co/api/v2/move/%s" % name.lower()) as r:
+                if r.status == 200:
+                    d = await r.json()
+                    pokemove = PokemonMove(d, self)
+                    if chunk:
+                        await pokemove.chunk_type()
+                    self.move_cache[name.lower()] = pokemove
+        return self.move_cache.get(name.lower())
+
+    async def fetch_pokemon_ability(self, name):
         raise NotImplementedError()
 
     async def get_pokemon(self, name, *, exact=False):
