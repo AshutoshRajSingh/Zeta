@@ -271,5 +271,57 @@ class Fun(commands.Cog):
             e.set_thumbnail(url=pokeobj.official_artwork)
             await ctx.send(embed=e)
 
+    @pokedex.command()
+    async def type(self, ctx: commands.Context, *, name: str):
+        """
+        Shows the damage relations for a particular type
+
+        `name` here is the name of the type you wish to see the details, for example: fire, electric, water etc.
+        """
+        typeobj = await self.pokeclient.fetch_pokemon_type(name.lower())
+        if typeobj:
+            pokeobj = await self.pokeclient.fetch_pokemon(random.choice(typeobj.pokemon))
+            e = discord.Embed(title=f"{typeobj.name.capitalize()} type details",
+                              description=f"Example pokemon: **{pokeobj.name.capitalize()}**",
+                              colour=discord.Colour.random())
+            e.set_thumbnail(url=pokeobj.official_artwork)
+            for k, v in typeobj.damage_relations.items():
+                if v:
+                    e.add_field(name=(" ".join(k.split('_'))).capitalize(),
+                                value=(", ".join(v)).capitalize(),
+                                inline=True)
+            await ctx.send(embed=e)
+        else:
+            return await ctx.send("Pokemon type not found, please double check the spelling")
+
+    @pokedex.command()
+    async def move(self, ctx: commands.Context, *, name: str):
+        """
+        Shows information about a pokemon move
+
+        `name` here is the name of the move you wish to see info about
+        """
+        moveobj = await self.pokeclient.get_pokemon_move(name)
+        if type(moveobj) is pokemon.PokemonMove:
+            e = discord.Embed(title=f"{moveobj.name.capitalize()}",
+                              description=f"{moveobj.effect_entry.splitlines()[0]}",
+                              colour=discord.Colour.random())
+            e.add_field(name="Accuracy",
+                        value=f"{moveobj.accuracy}")
+            e.add_field(name="Power",
+                        value=f"{moveobj.power}")
+            e.add_field(name="Type",
+                        value=f"{moveobj.type_name.capitalize()}")
+
+            for k, v in moveobj.type.damage_relations.items():
+                if v:
+                    e.add_field(name=(" ".join(k.split('_'))).capitalize(),
+                                value=(f", ".join(v)).capitalize(),
+                                inline=False)
+
+            await ctx.send(embed=e)
+        else:
+            return await ctx.send(f"Move not found, perhaps you meant one of these:\n{', '.join(moveobj)}")
+
 def setup(bot: Zeta):
     bot.add_cog(Fun(bot))
