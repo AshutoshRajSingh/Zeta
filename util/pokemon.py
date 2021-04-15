@@ -196,9 +196,19 @@ class Client:
                 d = await r.json()
                 self.pokemon = {entry['name'] for entry in d['results']}
 
-    async def fuzzsearch(self, query) -> Union[str, tuple]:
+    async def chunk_moves(self):
         """
-        Does a fuzzy search in self.pokemon based on the query supplied
+        Method that request all pokemon move names and adds them to internal cache
+        """
+        async with self.session.get("https://pokeapi.com/api/v2/moves?limit=65535") as r:
+            if r.status == 200:
+                d = await r.json()
+                self.move_cache = {entry['name'] for entry in d['results']}
+
+    @staticmethod
+    async def fuzzsearch(query, iterable) -> Union[str, tuple]:
+        """
+        Does a fuzzy search in an iterable[str] based on the query supplied
         """
         query = query.lower().strip()
         words = [word.strip() for word in query.split(' ') if word.strip()]
@@ -206,9 +216,9 @@ class Client:
 
         retdict = {}
         retlist = []
-        if query in self.pokemon:
+        if query in iterable:
             return query
-        for elem in self.pokemon:
+        for elem in iterable:
             if len(query.split('-')) == 1:
                 ratio = rapidfuzz.fuzz.ratio(elem, query)
             else:
