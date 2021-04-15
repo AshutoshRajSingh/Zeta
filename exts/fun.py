@@ -238,11 +238,20 @@ class Fun(commands.Cog):
             e = discord.Embed(title=f"{pokeobj.name.capitalize()}",
                               description=f", ".join(pokeobj.moves),
                               colour=discord.Colour.random())
+
+            e.description += "\n\n**Base stats:**"
             for item in pokeobj.stats:
                 e.add_field(name=item['stat']['name'],
                             value=item['base_stat'])
             e.set_thumbnail(url=pokeobj.official_artwork)
 
+            for typename in pokeobj.types:
+                _type = await self.pokeclient.fetch_pokemon_type(typename)
+                for elem, val in _type.damage_relations.items():
+                    if val:
+                        e.add_field(name=f"Type ({_type.name}) {' '.join(elem.split('_'))} type(s)",
+                                    value=(f", ".join(val)).capitalize(),
+                                    inline=False)
             await ctx.send(embed=e)
 
     @pokedex.command()
