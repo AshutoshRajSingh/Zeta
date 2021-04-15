@@ -413,3 +413,17 @@ class Client:
                 return fuzzresult[1]
         else:
             return await self.fetch_pokemon(name)
+
+    async def get_pokemon_move(self, name: str, *, exact: bool = False) -> Union[PokemonMove, list]:
+        if not exact:
+            if not self.move_cache:
+                await self.chunk_moves()
+
+            fuzzresult = await self.fuzzsearch(name, self.moves)
+
+            if type(fuzzresult) is str:
+                return await self.fetch_pokemon_move(fuzzresult)
+            else:
+                return fuzzresult[1]
+        else:
+            return await self.fetch_pokemon_move(name)
