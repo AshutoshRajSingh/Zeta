@@ -229,10 +229,10 @@ class Client:
         """
         Method that request all pokemon move names and adds them to internal cache
         """
-        async with self.session.get("https://pokeapi.com/api/v2/moves?limit=65535") as r:
+        async with self.session.get("https://pokeapi.co/api/v2/move?limit=65535") as r:
             if r.status == 200:
                 d = await r.json()
-                self.move_cache = {entry['name'] for entry in d['results']}
+                self.moves = {entry['name'] for entry in d['results']}
 
     @staticmethod
     async def fuzzsearch(query, iterable) -> Union[str, tuple]:
