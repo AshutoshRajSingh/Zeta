@@ -249,7 +249,7 @@ class Client:
         ret = [elem for elem in arr if elem]
         return ret[-1]
 
-    async def fetch_pokemon(self, name: str = None, *, chunk=True):
+    async def fetch_pokemon(self, name: str = None, *, chunk=True) -> Optional[Pokemon]:
         """
         Returns a Pokemon based on the name supplied or None, initially looks up cache and only makes api call if couldn't find in cache
 
@@ -274,7 +274,7 @@ class Client:
                         await self.pokecache[name.lower()].species.chunk_evolution()
         return self.pokecache.get(name.lower())
 
-    async def fetch_pokemon_species(self, name: str):
+    async def fetch_pokemon_species(self, name: str) -> Optional[PokemonSpecies]:
         """
         Returns a PokemonSpecies or None, first looks up cache then makes api call if couldn't find the species in cache
 
@@ -294,7 +294,7 @@ class Client:
                     return None
         return self.species_cache.get(name.lower())
 
-    async def fetch_pokemon_evolution(self, **kwargs):
+    async def fetch_pokemon_evolution(self, **kwargs) -> Optional[PokemonEvolutionChain]:
         """
         Returns a PokemonEvolution object for a particular id/url supplied as kwarg
         """
@@ -315,7 +315,7 @@ class Client:
 
         return self.evolution_cache.get(_id)
 
-    async def fetch_pokemon_type(self, name: str):
+    async def fetch_pokemon_type(self, name: str) -> Optional[PokemonType]:
         """
         Fetches a PokemonType ex: fire, electric, grass or None, first looks up cache and makes api call if couldn't find
 
@@ -328,7 +328,6 @@ class Client:
         ROUTE = "https://pokeapi.co/api/v2/type/%s" % name.lower()
         if name not in self.type_cache:
             async with self.session.get(ROUTE) as r:
-                print('fetching type hehe')
                 if r.status == 200:
                     d = await r.json()
                     self.type_cache[name.lower()] = PokemonType(d)
