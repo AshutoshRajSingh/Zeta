@@ -208,8 +208,9 @@ class Fun(commands.Cog):
         if type(pokeobj) is list:
             return await ctx.send(f"Pokemon not found, perhaps you meant one of these:\n{', '.join(pokeobj)}")
         else:
+            desc = random.choice(pokeobj.species.flavor_text_entries)
             e = discord.Embed(title=pokeobj.name.capitalize(),
-                              description=(random.choice(pokeobj.species.flavor_text_entries)).capitalize(),
+                              description=(" ".join(desc.split('\n'))).capitalize(),
                               colour=discord.Colour.random())
             e.add_field(name="ID", value=str(pokeobj.id))
             e.add_field(name="Abilities", value=", ".join(pokeobj.abilities))
