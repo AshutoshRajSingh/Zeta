@@ -230,6 +230,7 @@ class Client:
         Method that request all pokemon move names and adds them to internal cache
         """
         async with self.session.get("https://pokeapi.co/api/v2/move?limit=65535") as r:
+            print('chunking moves')
             if r.status == 200:
                 d = await r.json()
                 self.moves = {entry['name'] for entry in d['results']}
@@ -416,7 +417,7 @@ class Client:
 
     async def get_pokemon_move(self, name: str, *, exact: bool = False) -> Union[PokemonMove, list]:
         if not exact:
-            if not self.move_cache:
+            if not self.moves:
                 await self.chunk_moves()
 
             fuzzresult = await self.fuzzsearch(name, self.moves)
