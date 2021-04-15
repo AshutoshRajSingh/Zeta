@@ -172,6 +172,34 @@ class PokemonType:
     def very_weak_against(self):
         return set(self.double_damage_from + self.no_damage_to)
 
+class PokemonMove:
+    """
+    Class representing a pokemon move
+    """
+    def __init__(self, data, state):
+        self.state = state
+        self.id = data['id']
+        self.name = data['name']
+        self.power = data['power']
+        self.accuracy = data['accuracy']
+        self.type_name = data['type']['name']
+        self.type: Optional[PokemonType] = None
+        self.effect_chance = data['effect_chance']
+        self.__effect_entry = data['effect_entries'][0]['effect']
+
+    @property
+    def effect_entry(self):
+        if self.effect_chance:
+            return self.__effect_entry.replace('$effect_chance', str(self.effect_chance))
+        else:
+            return self.__effect_entry
+
+    async def chunk_type(self):
+        self.type = await self.state.fetch_pokemon_type(self.type_name)
+
+
+"""------------------------------------------------------------------------------------------------------------------"""
+
 
 class Client:
     """
