@@ -212,8 +212,9 @@ class Client:
         self.evolution_cache = {}
         self.type_cache = {}
         self.ability_cache = {}
-
+        self.move_cache = {}
         self.pokemon = {}
+        self.moves = {}
 
     async def chunk_pokemon(self):
         """
