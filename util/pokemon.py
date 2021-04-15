@@ -139,19 +139,30 @@ class PokemonType:
         Set made by concatenating double_damage_to and no_damage_from
     very_weak_against: setp[str]
         Set made by concatenating double_damage_from and no_damage_to
+    damage_relations: Mapping[str, list[str]]
+        A mapping of relation name (ex: double damage from) to list containing names of types the relation corresponds to
+    pokemon: list[str]
+        A list of pokemon names that have this type as their slot 1 type
     """
     def __init__(self, data):
         self.id = data['id']
         self.name = data['name']
+        self.dr = data['damage_relations']
+        self.no_damage_to = [entry['name'] for entry in self.dr['no_damage_to']]
+        self.half_damage_to = [entry['name'] for entry in self.dr['half_damage_to']]
+        self.double_damage_to = [entry['name'] for entry in self.dr['double_damage_to']]
+        self.no_damage_from = [entry['name'] for entry in self.dr['no_damage_from']]
+        self.half_damage_from = [entry['name'] for entry in self.dr['half_damage_from']]
+        self.double_damage_from = [entry['name'] for entry in self.dr['double_damage_from']]
+        self._pokemon = data['pokemon']
 
-        dr = data['damage_relations']
+    @property
+    def pokemon(self):
+        return [entry['pokemon']['name'] for entry in self._pokemon if entry['slot'] == 1]
 
-        self.no_damage_to = [entry['name'] for entry in dr['no_damage_to']]
-        self.half_damage_to = [entry['name'] for entry in dr['half_damage_to']]
-        self.double_damage_to = [entry['name'] for entry in dr['double_damage_to']]
-        self.no_damage_from = [entry['name'] for entry in dr['no_damage_from']]
-        self.half_damage_from = [entry['name'] for entry in dr['half_damage_from']]
-        self.double_damage_from = [entry['name'] for entry in dr['double_damage_from']]
+    @property
+    def damage_relations(self):
+        return {k: [entry['name'] for entry in v] for k, v in self.dr.items()}
 
     @property
     def very_strong_against(self):
