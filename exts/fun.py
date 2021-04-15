@@ -312,12 +312,12 @@ class Fun(commands.Cog):
                         value=f"{moveobj.power}")
             e.add_field(name="Type",
                         value=f"{moveobj.type_name.capitalize()}")
-
-            for k, v in moveobj.type.damage_relations.items():
-                if v:
-                    e.add_field(name=(" ".join(k.split('_'))).capitalize(),
-                                value=(f", ".join(v)).capitalize(),
-                                inline=False)
+            e.add_field(name=f"Double effectiveness against",
+                        value=f"{(', '.join(moveobj.type.double_damage_to) if moveobj.type.double_damage_to else 'None')}".capitalize())
+            e.add_field(name=f"Half effectiveness against",
+                        value=f"{(', '.join(moveobj.type.half_damage_to)) if moveobj.type.half_damage_to else 'None'}".capitalize())
+            e.add_field(name=f"Ineffective against",
+                        value=f"{(', '.join(moveobj.type.no_damage_to)) if moveobj.type.no_damage_to else 'None'}".capitalize())
 
             await ctx.send(embed=e)
         else:
