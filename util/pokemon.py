@@ -428,7 +428,7 @@ class Client:
         else:
             return await self.fetch_pokemon(name)
 
-    async def get_pokemon_move(self, name: str, *, exact: bool = False) -> Union[PokemonMove, list]:
+    async def get_pokemon_move(self, name: str, *, exact: bool = False):
         if not exact:
             if not self.moves:
                 await self.chunk_moves()
