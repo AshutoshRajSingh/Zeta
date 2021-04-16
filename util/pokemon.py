@@ -441,3 +441,10 @@ class Client:
                 return fuzzresult[1]
         else:
             return await self.fetch_pokemon_move(name)
+
+    async def close(self):
+        """
+        Closes the client
+        """
+        if self.session:
+            await self.session.close()
