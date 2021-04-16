@@ -209,7 +209,48 @@ class PokemonMove:
 
 class Client:
     """
-    Represents a client that interacts with the pokeapi
+    Represents a client that interacts with the pokeapi, if used in the way intended, caches resources upon recieveing
+    them and avoids repeated requests till instance is deconstructed
+    Method specific usage instructions can be found in their respective docstrings
+
+    Example:
+
+        async def test():
+            async with Client() as pokeclient:
+                pikachu = await pokeclient.fetch_pokemon('pikachu')
+                print(pikachu.species.evolution)
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(test())
+
+    Output:
+
+        pichu
+        └── pikachu
+            └── raichu
+
+
+    Alternatively, for repeated usage, can be instantiated like usual, note that this method requires calling
+    Client.close() after all usage is done.
+
+    Example:
+
+        async def test():
+            pokeclient = Client()
+            pikachu = await pokeclient.fetch_pokemon('pikachu')
+            print(pikachu.species.evolution)
+
+            # Needs to be done manually after all usage is done if instantiating, using the context manager does it for you.
+            await pokeclient.close()
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(test())
+
+    Output:
+
+        pichu
+        └── pikachu
+            └── raichu
     """
     def __init__(self, *, session: aiohttp.ClientSession = None):
         self.loop = asyncio.get_event_loop()
