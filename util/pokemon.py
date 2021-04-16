@@ -288,7 +288,8 @@ class Client:
 
     async def fetch_pokemon(self, name: str = None, *, chunk=True) -> Optional[Pokemon]:
         """
-        Returns a Pokemon based on the name supplied or None, initially looks up cache and only makes api call if couldn't find in cache
+        Returns a Pokemon based on the name supplied or None, initially looks up cache and only makes api call if
+        couldn't find in cache
 
         Parameters:
             name:str
