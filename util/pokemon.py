@@ -222,6 +222,17 @@ class Client:
         self.pokemon = {}
         self.moves = {}
 
+    async def __aenter__(self):
+        self.session = aiohttp.ClientSession(raise_for_status=False)
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
+    async def __pre_request_check(self):
+        if not self.session:
+            self.session = aiohttp.ClientSession()
+
     async def chunk_pokemon(self):
         """
         Method that requests all pokemon from pokeapi and adds them to internal cache
