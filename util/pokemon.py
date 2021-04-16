@@ -323,6 +323,7 @@ class Client:
             Optional[PokemonSpecies]
         """
         if name not in self.species_cache:
+            await self.__pre_request_check()
             ROUTE = "https://pokeapi.co/api/v2/pokemon-species/%s" % name.lower()
             async with self.session.get(ROUTE) as r:
                 if r.status == 200:
