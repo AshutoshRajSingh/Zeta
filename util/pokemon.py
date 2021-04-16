@@ -1,7 +1,9 @@
-import rapidfuzz
+import asyncio
 import aiohttp
-from typing import Optional, Union
+import rapidfuzz
 from treelib import Tree
+from typing import Optional, Union
+
 
 """
 Async-ready microwrapper for the pokeapi, does not cover the entire api, only the parts relevant to the pokedex command.
