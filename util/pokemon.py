@@ -212,6 +212,7 @@ class Client:
     Represents a client that interacts with the pokeapi
     """
     def __init__(self, *, session: aiohttp.ClientSession = None):
+        self.loop = asyncio.get_event_loop()
         self.session = session
         self.pokecache = {}
         self.species_cache = {}
