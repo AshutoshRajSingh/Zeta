@@ -220,6 +220,7 @@ class Client:
         """
         Method that requests all pokemon from pokeapi and adds them to internal cache
         """
+        await self.__pre_request_check()
         async with self.session.get("https://pokeapi.co/api/v2/pokemon?limit=65535") as r:
             if r.status == 200:
                 d = await r.json()
@@ -229,8 +230,8 @@ class Client:
         """
         Method that request all pokemon move names and adds them to internal cache
         """
+        await self.__pre_request_check()
         async with self.session.get("https://pokeapi.co/api/v2/move?limit=65535") as r:
-            print('chunking moves')
             if r.status == 200:
                 d = await r.json()
                 self.moves = {entry['name'] for entry in d['results']}
@@ -294,6 +295,7 @@ class Client:
         Returns: Optional[Pokemon]
         """
         if name not in self.pokecache:
+            await self.__pre_request_check()
             ROUTE = "https://pokeapi.co/api/v2/pokemon/%s" % name.lower()
             async with self.session.get(ROUTE) as r:
                 if r.status == 200:
@@ -338,6 +340,7 @@ class Client:
             raise ValueError("Either id or url required")
 
         if _id not in self.evolution_cache:
+            await self.__pre_request_check()
             async with self.session.get(ROUTE) as r:
                 if r.status == 200:
                     d = await r.json()
@@ -357,6 +360,7 @@ class Client:
         """
         ROUTE = "https://pokeapi.co/api/v2/type/%s" % name.lower()
         if name not in self.type_cache:
+            await self.__pre_request_check()
             async with self.session.get(ROUTE) as r:
                 if r.status == 200:
                     d = await r.json()
@@ -376,6 +380,7 @@ class Client:
             Optional[PokemonMove]
         """
         if name.lower() not in self.move_cache:
+            await self.__pre_request_check()
             async with self.session.get("https://pokeapi.co/api/v2/move/%s" % name.lower()) as r:
                 if r.status == 200:
                     d = await r.json()
