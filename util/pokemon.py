@@ -318,7 +318,7 @@ class Client:
                 self.moves = {entry['name'] for entry in d['results']}
 
     @staticmethod
-    async def fuzzsearch(query, iterable) -> Union[str, tuple]:
+    async def fuzzsearch(query, iterable):
         """
         Does a fuzzy search in an iterable[str] based on the query supplied
         """
