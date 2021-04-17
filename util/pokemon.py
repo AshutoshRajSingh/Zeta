@@ -348,7 +348,7 @@ class Client:
         if retdict:
             return max_name
         else:
-            return max_name, sorted(retlist)
+            raise NoSingleMatch("Fuzzy search couldn't pinpoint a single match", guesses=retlist)
 
     @staticmethod
     def get_endpoint(url):
