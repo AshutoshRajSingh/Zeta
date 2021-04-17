@@ -456,7 +456,7 @@ class Client:
 
     async def get_pokemon(self, name, *, exact=False):
         """
-        Method that wraps fuzzy searching, and fetching into one.
+        Method that wraps fuzzy searching and fetching for a pokemon into one
 
         Parameters:
             name: The name of the pokemon to search and fetch
@@ -482,6 +482,22 @@ class Client:
             return await self.fetch_pokemon(name)
 
     async def get_pokemon_move(self, name: str, *, exact: bool = False):
+        """
+        Method that wraps fuzzy matching and fetching, for a pokemon move
+
+        Parameters:
+            name: str
+                The name of the move to fetch.
+            exact: bool
+                Whether or not it has to be exact, defaults to False, if set to True, skips fuzzy matching
+                and directly fetches
+
+        Returns: Union[PokemonMove, list, None]
+
+            PokemonMove returned if pokemon move with that name was found
+            list containing potential names returned in case a move with a close enough name supplied wasn't found
+            None returned if exact was set to True and remote returned 404
+        """
         if not exact:
             if not self.moves:
                 await self.chunk_moves()
