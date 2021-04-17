@@ -278,21 +278,22 @@ class Fun(commands.Cog):
 
         `name` here is the name of the type you wish to see the details, for example: fire, electric, water etc.
         """
-        typeobj = await self.pokeclient.fetch_pokemon_type(name.lower())
-        if typeobj:
-            pokeobj = await self.pokeclient.fetch_pokemon(random.choice(typeobj.pokemon))
-            e = discord.Embed(title=f"{typeobj.name.capitalize()} type details",
-                              description=f"Example pokemon: **{pokeobj.name.capitalize()}**",
-                              colour=discord.Colour.random())
-            e.set_thumbnail(url=pokeobj.official_artwork)
-            for k, v in typeobj.damage_relations.items():
-                if v:
-                    e.add_field(name=(" ".join(k.split('_'))).capitalize(),
-                                value=(", ".join(v)).capitalize(),
-                                inline=True)
-            await ctx.send(embed=e)
+       
+        pokeobj = await self.pokeclient.get_pokemon(name)
+        if type(pokeobj) is list:
+            return await ctx.send(f"Pokemon not found, perhaps you meant one of these:\n{', '.join(pokeobj)}")
         else:
-            return await ctx.send("Pokemon type not found, please double check the spelling")
+        e = discord.Embed(title=f"{pokeobj.type.capitalize()} ",
+                              description=f"types relation for **{pokeobj.name.capitalize()}**",
+                              colour=discord.Colour.random())
+        e.set_thumbnail(url=pokeobj.official_artwork)
+        for k, v in pokeobj.damage_relations.items():
+        if v:
+          e.add_field(name=(" ".join(k.split('_'))).capitalize(),
+             value=(", ".join(v)).capitalize(),
+             inline=True)
+        await ctx.send(embed=e)
+        
 
     @pokedex.command()
     async def move(self, ctx: commands.Context, *, name: str):
