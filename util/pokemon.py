@@ -205,6 +205,22 @@ class PokemonMove:
     async def chunk_type(self):
         self.type = await self.state.fetch_pokemon_type(self.type_name)
 
+"""
+------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------Exception classes------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+class FuzzFailure(Exception):
+    """
+    Base exception class for any errors occurring during fuzzy search
+    """
+
+class NoSingleMatch(FuzzFailure):
+    def __init__(self, message, guesses):
+        self.message = message
+        self.guesses = guesses
+
 
 """
 ------------------------------------------------------------------------------------------------------------------------
