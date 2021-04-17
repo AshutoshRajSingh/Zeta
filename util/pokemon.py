@@ -9,6 +9,12 @@ from typing import Optional, Union
 Async-ready microwrapper for the pokeapi, does not cover the entire api, only the parts relevant to the pokedex command.
 """
 
+"""
+------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------Model classes-------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+"""
+
 class Pokemon:
     """
     A class representing a pokemon
