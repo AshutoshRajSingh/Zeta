@@ -204,10 +204,8 @@ class Fun(commands.Cog):
 
         `name` here is the name of the pokemon you wish to view.
         """
-        pokeobj = await self.pokeclient.get_pokemon(name)
-        if type(pokeobj) is list:
-            return await ctx.send(f"Pokemon not found, perhaps you meant one of these:\n{', '.join(pokeobj)}")
-        else:
+        try:
+            pokeobj = await self.pokeclient.get_pokemon(name)
             desc = random.choice(pokeobj.species.flavor_text_entries)
             e = discord.Embed(title=pokeobj.name.capitalize(),
                               description=(" ".join(desc.split('\n'))).capitalize(),
@@ -223,6 +221,8 @@ class Fun(commands.Cog):
                 e.add_field(name="Special", value="Mythical pokemon")
             e.set_image(url=pokeobj.official_artwork)
             await ctx.send(embed=e)
+        except pokemon.NoSingleMatch as e:
+            await ctx.send(f"Pokemon not found, perhaps you meant one of these:\n{', '.join(e.guesses)}")
 
     @pokedex.command()
     async def combat(self, ctx: commands.Context, *, name: str):
@@ -301,8 +301,9 @@ class Fun(commands.Cog):
 
         `name` here is the name of the move you wish to see info about
         """
-        moveobj = await self.pokeclient.get_pokemon_move(name)
-        if type(moveobj) is pokemon.PokemonMove:
+
+        try:
+            moveobj = await self.pokeclient.get_pokemon_move(name)
             e = discord.Embed(title=f"{moveobj.name.capitalize()}",
                               description=f"{moveobj.effect_entry.splitlines()[0]}",
                               colour=discord.Colour.random())
@@ -318,10 +319,9 @@ class Fun(commands.Cog):
                         value=f"{(', '.join(moveobj.type.half_damage_to)) if moveobj.type.half_damage_to else 'None'}".capitalize())
             e.add_field(name=f"Ineffective against",
                         value=f"{(', '.join(moveobj.type.no_damage_to)) if moveobj.type.no_damage_to else 'None'}".capitalize())
-
             await ctx.send(embed=e)
-        else:
-            return await ctx.send(f"Move not found, perhaps you meant one of these:\n{', '.join(moveobj)}")
+        except pokemon.NoSingleMatch as e:
+            return await ctx.send(f"Move not found, perhaps you meant one of these:\n{', '.join(e.guesses)}")
 
 def setup(bot: Zeta):
     bot.add_cog(Fun(bot))
