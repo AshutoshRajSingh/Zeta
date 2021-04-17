@@ -231,10 +231,8 @@ class Fun(commands.Cog):
 
         `name` is the name of the pokemon whose combat info you wish to view.
         """
-        pokeobj = await self.pokeclient.get_pokemon(name)
-        if type(pokeobj) is list:
-            return await ctx.send(f"Pokemon not found, perhaps you meant one of these:\n{', '.join(pokeobj)}")
-        else:
+        try:
+            pokeobj = await self.pokeclient.get_pokemon(name)
             e = discord.Embed(title=f"{pokeobj.name.capitalize()}",
                               description=f", ".join(pokeobj.moves),
                               colour=discord.Colour.random())
@@ -253,6 +251,8 @@ class Fun(commands.Cog):
                                     value=(f", ".join(val)).capitalize(),
                                     inline=False)
             await ctx.send(embed=e)
+        except pokemon.NoSingleMatch as e:
+            return await ctx.send(f"Pokemon not found, perhaps you meant one of these:\n{', '.join(e.guesses)}")
 
     @pokedex.command()
     async def evolution(self, ctx: commands.Context, *, name: str):
