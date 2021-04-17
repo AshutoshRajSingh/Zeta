@@ -218,6 +218,14 @@ class FuzzFailure(Exception):
     """
 
 class NoSingleMatch(FuzzFailure):
+    """
+    Exception when fuzzy search couldn't pinpoint any value with a > 80% match
+
+    Attributes:
+
+        guesses: list[str]
+            A list containing the entries that had a > 50% match.
+    """
     def __init__(self, message, guesses):
         self.message = message
         self.guesses = guesses
@@ -321,7 +329,18 @@ class Client:
     @staticmethod
     async def fuzzsearch(query, iterable):
         """
-        Does a fuzzy search in an iterable[str] based on the query supplied
+        Manipulates the query to make it more pokeapi friendly ex: making a space separated string hyphen separated then
+        does a fuzzy search in an iterable[str] based on the query.
+
+        Parameters:
+            query: the string to search for
+            iterable: the iterable containing the data to be searched upon
+
+        Returns: str
+            The closest match above 80% that it could find inside the iterable
+
+        Raises:
+            NoSingleMatch: Raised when no entry in iterable gave a match > 80%
         """
         query = query.lower().strip()
         words = [word.strip() for word in query.split(' ') if word.strip()]
@@ -488,8 +507,10 @@ class Client:
         Returns: Union[Pokemon, list, None]
 
             Pokemon object returned if fuzzy search was able to pinpoint one value.
-            List containing potential matches returned if fuzzy search didn't reach any firm conclusion
             Nonetype returned if exact was set to True and remote returned 404
+
+        Raises:
+            NoSingleMatch - If fuzzy search couldn't find find an entry with high enough confidence.
         """
         if not exact:
             if not self.pokemon:
@@ -511,11 +532,13 @@ class Client:
                 Whether or not it has to be exact, defaults to False, if set to True, skips fuzzy matching
                 and directly fetches
 
-        Returns: Union[PokemonMove, list, None]
+        Returns: Union[PokemonMove, None]
 
             PokemonMove returned if pokemon move with that name was found
-            list containing potential names returned in case a move with a close enough name supplied wasn't found
             None returned if exact was set to True and remote returned 404
+
+        Raises:
+            NoSingleMatch - If fuzzy search couldn't find find an entry with high enough confidence.
         """
         if not exact:
             if not self.moves:
