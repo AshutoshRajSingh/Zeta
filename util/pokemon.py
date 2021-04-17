@@ -495,11 +495,7 @@ class Client:
                 await self.chunk_pokemon()
 
             fuzzresult = await self.fuzzsearch(name, self.pokemon)
-
-            if type(fuzzresult) is str:
-                return await self.fetch_pokemon(fuzzresult)
-            else:
-                return fuzzresult[1]
+            return await self.fetch_pokemon(fuzzresult)
         else:
             return await self.fetch_pokemon(name)
 
