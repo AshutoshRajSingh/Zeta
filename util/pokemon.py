@@ -230,6 +230,10 @@ class NoSingleMatch(FuzzFailure):
         self.message = message
         self.guesses = guesses
 
+class HTTPException(Exception):
+    def __init__(self, code):
+        self.code = code
+
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -312,6 +316,8 @@ class Client:
             if r.status == 200:
                 d = await r.json()
                 return d
+            else:
+                raise HTTPException(r.status)
 
     async def chunk_pokemon(self):
         """
@@ -405,7 +411,10 @@ class Client:
         """
         if name not in self.pokecache:
             ROUTE = "https://pokeapi.co/api/v2/pokemon/%s" % name.lower()
-            d = await self._perform_http_get(ROUTE)
+            try:
+                d = await self._perform_http_get(ROUTE)
+            except HTTPException:
+                return
             self.pokecache[name.lower()] = Pokemon(d, self)
             if chunk:
                 await self.pokecache[name.lower()].chunk_species()
@@ -424,7 +433,10 @@ class Client:
         """
         if name not in self.species_cache:
             ROUTE = "https://pokeapi.co/api/v2/pokemon-species/%s" % name.lower()
-            d = await self._perform_http_get(ROUTE)
+            try:
+                d = await self._perform_http_get(ROUTE)
+            except HTTPException:
+                return
             self.species_cache[d['name'].lower()] = PokemonSpecies(d, self)
 
         return self.species_cache.get(name.lower())
@@ -443,7 +455,10 @@ class Client:
             raise ValueError("Either id or url required")
 
         if _id not in self.evolution_cache:
-            d = await self._perform_http_get(ROUTE)
+            try:
+                d = await self._perform_http_get(ROUTE)
+            except HTTPException:
+                return
             self.evolution_cache[_id] = PokemonEvolutionChain(d)
 
         return self.evolution_cache.get(_id)
@@ -460,7 +475,10 @@ class Client:
         """
         ROUTE = "https://pokeapi.co/api/v2/type/%s" % name.lower()
         if name not in self.type_cache:
-            d = await self._perform_http_get(ROUTE)
+            try:
+                d = await self._perform_http_get(ROUTE)
+            except HTTPException:
+                return
             self.type_cache[name.lower()] = PokemonType(d)
         return self.type_cache.get(name.lower())
 
@@ -478,7 +496,10 @@ class Client:
         """
         if name.lower() not in self.move_cache:
             ROUTE = "https://pokeapi.co/api/v2/move/%s" % name.lower()
-            d = await self._perform_http_get(ROUTE)
+            try:
+                d = await self._perform_http_get(ROUTE)
+            except HTTPException:
+                return
             pokemove = PokemonMove(d, self)
             if chunk:
                 await pokemove.chunk_type()
