@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import rapidfuzz
 from treelib import Tree
-from typing import Optional, Union
+from typing import Optional
 
 
 """
@@ -306,6 +306,13 @@ class Client:
         if not self.session:
             self.session = aiohttp.ClientSession()
 
+    async def _perform_http_get(self, endpoint) -> Optional[dict]:
+        await self.__pre_request_check()
+        async with self.session.get(endpoint) as r:
+            if r.status == 200:
+                d = await r.json()
+                return d
+
     async def chunk_pokemon(self):
         """
         Method that requests all pokemon from pokeapi and adds them to internal cache
@@ -397,15 +404,12 @@ class Client:
         Returns: Optional[Pokemon]
         """
         if name not in self.pokecache:
-            await self.__pre_request_check()
             ROUTE = "https://pokeapi.co/api/v2/pokemon/%s" % name.lower()
-            async with self.session.get(ROUTE) as r:
-                if r.status == 200:
-                    d = await r.json()
-                    self.pokecache[name.lower()] = Pokemon(d, self)
-                    if chunk:
-                        await self.pokecache[name.lower()].chunk_species()
-                        await self.pokecache[name.lower()].species.chunk_evolution()
+            d = await self._perform_http_get(ROUTE)
+            self.pokecache[name.lower()] = Pokemon(d, self)
+            if chunk:
+                await self.pokecache[name.lower()].chunk_species()
+                await self.pokecache[name.lower()].species.chunk_evolution()
         return self.pokecache.get(name.lower())
 
     async def fetch_pokemon_species(self, name: str) -> Optional[PokemonSpecies]:
@@ -419,14 +423,10 @@ class Client:
             Optional[PokemonSpecies]
         """
         if name not in self.species_cache:
-            await self.__pre_request_check()
             ROUTE = "https://pokeapi.co/api/v2/pokemon-species/%s" % name.lower()
-            async with self.session.get(ROUTE) as r:
-                if r.status == 200:
-                    d = await r.json()
-                    self.species_cache[d['name'].lower()] = PokemonSpecies(d, self)
-                else:
-                    return None
+            d = await self._perform_http_get(ROUTE)
+            self.species_cache[d['name'].lower()] = PokemonSpecies(d, self)
+
         return self.species_cache.get(name.lower())
 
     async def fetch_pokemon_evolution(self, **kwargs) -> Optional[PokemonEvolutionChain]:
@@ -443,11 +443,8 @@ class Client:
             raise ValueError("Either id or url required")
 
         if _id not in self.evolution_cache:
-            await self.__pre_request_check()
-            async with self.session.get(ROUTE) as r:
-                if r.status == 200:
-                    d = await r.json()
-                    self.evolution_cache[_id] = PokemonEvolutionChain(d)
+            d = await self._perform_http_get(ROUTE)
+            self.evolution_cache[_id] = PokemonEvolutionChain(d)
 
         return self.evolution_cache.get(_id)
 
@@ -463,11 +460,8 @@ class Client:
         """
         ROUTE = "https://pokeapi.co/api/v2/type/%s" % name.lower()
         if name not in self.type_cache:
-            await self.__pre_request_check()
-            async with self.session.get(ROUTE) as r:
-                if r.status == 200:
-                    d = await r.json()
-                    self.type_cache[name.lower()] = PokemonType(d)
+            d = await self._perform_http_get(ROUTE)
+            self.type_cache[name.lower()] = PokemonType(d)
         return self.type_cache.get(name.lower())
 
     async def fetch_pokemon_move(self, name: str, *, chunk=True) -> Optional[PokemonMove]:
@@ -483,14 +477,13 @@ class Client:
             Optional[PokemonMove]
         """
         if name.lower() not in self.move_cache:
-            await self.__pre_request_check()
-            async with self.session.get("https://pokeapi.co/api/v2/move/%s" % name.lower()) as r:
-                if r.status == 200:
-                    d = await r.json()
-                    pokemove = PokemonMove(d, self)
-                    if chunk:
-                        await pokemove.chunk_type()
-                    self.move_cache[name.lower()] = pokemove
+            ROUTE = "https://pokeapi.co/api/v2/move/%s" % name.lower()
+            d = await self._perform_http_get(ROUTE)
+            pokemove = PokemonMove(d, self)
+            if chunk:
+                await pokemove.chunk_type()
+            self.move_cache[name.lower()] = pokemove
+
         return self.move_cache.get(name.lower())
 
     async def fetch_pokemon_ability(self, name):
