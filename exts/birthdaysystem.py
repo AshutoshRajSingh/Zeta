@@ -101,7 +101,7 @@ class BirthdaySystem(commands.Cog, name="Birthday system"):
         query1 = f"SELECT id, bdayalert, bdayalerttime FROM guilds WHERE bdayalerttime < $1 AND bdayalerttime > $2"
 
         # Query to fetch the members who have their birthday on that day
-        query = "SELECT id, birthday FROM server_members WHERE DATE_PART('day', birthday) = DATE_PART('day', CURRENT_DATE) AND DATE_PART('month', birthday) = DATE_PART('month', CURRENT_DATE) AND guildid = $1"
+        query = "SELECT memberid, birthday FROM server_members WHERE DATE_PART('day', birthday) = DATE_PART('day', CURRENT_DATE) AND DATE_PART('month', birthday) = DATE_PART('month', CURRENT_DATE) AND guildid = $1"
 
         async with self.bot.pool.acquire() as conn:
             async with conn.transaction():
